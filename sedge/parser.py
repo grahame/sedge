@@ -66,7 +66,10 @@ class Root(Section):
 
     def output_lines(self, fd):
         for keyword, parts in sorted(self.lines):
-            fd.write('%s %s\n' % (keyword, ' '.join(parts)))
+            line = keyword
+            if parts:
+                line += ' ' + ' '.join(parts)
+            fd.write(line)
         fd.write('\n')
 
 

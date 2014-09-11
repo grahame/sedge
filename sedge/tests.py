@@ -64,12 +64,14 @@ Host blah
     @via gateway
 ''', '\nHost blah\n    ProxyCommand ssh gateway nc %h %p 2> /dev/null\n\n')
 
+
 def test_include():
     check_parse_result('''
 @include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/simple.sedge
 ''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
 
-def test_include():
+
+def test_include_strips_root():
     check_parse_result('''
 @include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/strip_global.sedge
 ''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')

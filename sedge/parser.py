@@ -1,5 +1,9 @@
+import requests
+import urllib
 import pipes
+import sys
 from itertools import product
+from io import StringIO
 
 
 class ParserException(Exception):
@@ -13,6 +17,9 @@ class Section:
         self.lines = []
         self.types = []
         self.expansions = []
+
+    def has_lines(self):
+        return len(self.lines) > 0
 
     def add_line(self, keyword, parts):
         self.lines.append((keyword, parts))
@@ -141,8 +148,10 @@ class SedgeConfig:
     base parser for a sedge configuration file.
     handles all directives and expansions
     """
-    def __init__(self, fd):
+    def __init__(self, fd, url=None):
+        self._url = url
         self.sections = [Root()]
+        self.includes = []
         self.parse(fd)
 
     def parse(self, fd):
@@ -184,6 +193,16 @@ class SedgeConfig:
                     ('ssh %s nc %%h %%p 2> /dev/null' %
                         (pipes.quote(parts[0])),))
                 return True
+            if keyword == '@include':
+                if len(parts) != 1:
+                    raise ParserException('usage: @include <https://...>')
+                url = parts[0]
+                if urllib.parse.urlparse(url).scheme != 'https':
+                    raise ParserException('error: @includes may only use https:// URLs')
+                req = requests.get(url, verify=True)
+                subconfig = SedgeConfig(StringIO(req.text), url=url)
+                self.includes.append((url, subconfig))
+                return True
 
         for line in (t.strip() for t in fd):
             if line.startswith('#') or line == '':
@@ -214,11 +233,21 @@ class SedgeConfig:
             raise ParserException("No such section: %s" % (name))
         return matches[0]
 
-    def output(self, fd):
+    def output(self, fd, is_include=False):
         # output global config from root section
         root = self.sections[0]
-        root.output_lines(fd)
+        if is_include:
+            if root.has_lines():
+                print("Warning: global config in @include '%s' ignored." % (self._url), file=sys.stderr)
+                print("Ignored lines are:", file=sys.stderr)
+                warning_fd = StringIO()
+                root.output_lines(warning_fd)
+                print("\n".join([" > " + t for t in warning_fd.getvalue().splitlines()]), file=sys.stderr)
+        else:
+            root.output_lines(fd)
         for host in self.sections_for_cls(Host):
             for hostdef in host.get_hostdefs(self._get_section_by_name):
                 fd.write(hostdef)
                 fd.write('\n\n')
+        for url, subconfig in self.includes:
+            subconfig.output(fd, is_include=True)

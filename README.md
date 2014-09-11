@@ -8,6 +8,11 @@ If you find this software useful, please consider
 [donating to the effort to save](http://www.givenow.com.au/groundparrot)
 this critically endangered species.
 
+Build status
+------------
+
+[![Build Status](https://travis-ci.org/grahame/sedge.svg?branch=master)](https://travis-ci.org/grahame/sedge)
+
 Highlights
 -----------
 

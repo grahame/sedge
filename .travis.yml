@@ -3,5 +3,6 @@ python:
   - "3.4"
 # command to run tests, e.g. python setup.py test
 install: "pip3 install -e .[dev]"
-script: flake8 sedge
-script: nosetests
+script:
+ - flake8 sedge
+ - nosetests

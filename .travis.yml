@@ -4,5 +4,5 @@ python:
 # command to run tests, e.g. python setup.py test
 install: "pip3 install -e .[dev]"
 script:
- - flake8 sedge
+ - ./lint
  - nosetests

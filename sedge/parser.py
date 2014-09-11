@@ -69,6 +69,7 @@ class Root(Section):
             fd.write('%s %s\n' % (keyword, ' '.join(parts)))
         fd.write('\n')
 
+
 class HostAttrs(Section):
     def __init__(self, name):
         super(HostAttrs, self).__init__(name, [])

@@ -65,7 +65,7 @@ Example
         IdentifyFile ~/.ssh/ceph-id.rsa
 
     # pull in a public sedge definition
-    @include http://example.com/user-nodes.sedge
+    @include https://example.com/user-nodes.sedge
 
 License
 -------

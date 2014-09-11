@@ -7,7 +7,7 @@ def check_parse_result(in_text, out_text):
     config = SedgeConfig(StringIO(in_text))
     outfd = StringIO()
     config.output(outfd)
-    eq_(outfd.getvalue(), out_text)
+    eq_(out_text, outfd.getvalue())
 
 
 def test_empty_file():
@@ -63,3 +63,13 @@ def test_via():
 Host blah
     @via gateway
 ''', '\nHost blah\n    ProxyCommand ssh gateway nc %h %p 2> /dev/null\n\n')
+
+def test_include():
+    check_parse_result('''
+@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/simple.sedge
+''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
+
+def test_include():
+    check_parse_result('''
+@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/strip_global.sedge
+''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')

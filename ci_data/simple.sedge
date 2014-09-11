@@ -1,0 +1,6 @@
+@HostAttrs trusted
+    ForwardAgent yes
+    ForwardX11 yes
+Host percival
+    HostName beaking
+    @is trusted

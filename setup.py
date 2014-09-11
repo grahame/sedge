@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-dev_requires = ['flake8']
+dev_requires = ['flake8', 'nose']
 install_requires = ['requests']
 
 setup(

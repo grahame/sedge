@@ -7,7 +7,15 @@ from io import StringIO
 from .keylib import KeyNotFound
 
 
-class ParserException(Exception):
+class SedgeException(Exception):
+    pass
+
+
+class ParserException(SedgeException):
+    pass
+
+
+class OutputException(SedgeException):
     pass
 
 
@@ -91,29 +99,32 @@ class HostAttrs(Section):
 
 class Host(Section):
     @classmethod
-    def expand_with(cls, defn):
-        if len(defn) == 0:
-            return []
+    def expand_with_token(cls, s):
         fmt_error = 'range should be format {A..B} or {A..B/C}'
-        first = defn[0]
-        if first.startswith('{') and first.endswith('}'):
-            try:
-                range_defn = first[1:-1]
-                incr = 1
-                if '/' in range_defn:
-                    range_defn, incr = '/'.split(range_defn)
-                    incr = int(incr)
-                range_parts = range_defn.split('..')
-                if len(range_parts) != 2:
-                    raise ParserException(fmt_error)
-                from_val, to_val = (int(t) for t in range_parts)
-                to_val += 1  # inclusive end
-            except ValueError:
-                raise ParserException(
-                    'expected an integer in range definition.')
-            return list(str(t) for t in range(from_val, to_val, incr))
-        # if not a range, return as literal
-        return defn
+        if not s.startswith('{') or not s.endswith('}'):
+            return s
+        try:
+            range_defn = s[1:-1]
+            incr = 1
+            if '/' in range_defn:
+                range_defn, incr = range_defn.rsplit('/', 1)
+                incr = int(incr)
+            range_parts = range_defn.split('..')
+            if len(range_parts) != 2:
+                raise ParserException(fmt_error)
+            from_val, to_val = (int(t) for t in range_parts)
+            to_val += 1  # inclusive end
+        except ValueError:
+            raise ParserException(
+                'expected an integer in range definition.')
+        return list(str(t) for t in range(from_val, to_val, incr))
+
+    @classmethod
+    def expand_with(cls, defn):
+        expanded = []
+        for tok in defn:
+            expanded += Host.expand_with_token(tok)
+        return expanded
 
     def resolve_defn(self, config_access):
         visited = set()
@@ -192,7 +203,7 @@ class ConfigOutput:
         out = [keyword]
         for part in parts:
             if '"' in part:
-                raise ParserException("quotation marks may not be used in arguments")
+                raise OutputException("quotation marks may not be used in arguments")
             if ' ' in part:
                 out.append('"%s"' % part)
             else:

@@ -2,7 +2,7 @@ import argparse
 import os.path
 import sys
 from tempfile import NamedTemporaryFile
-from .engine import SedgeEngine, ParserException, ConfigOutput
+from .engine import SedgeEngine, SedgeException, ConfigOutput
 from .keylib import KeyLibrary
 
 
@@ -74,5 +74,5 @@ def main():
     args = parser.parse_args()
     try:
         process(args)
-    except ParserException as e:
+    except SedgeException as e:
         print('Error: %s' % (e), file=sys.stderr)

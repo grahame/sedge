@@ -1,12 +1,16 @@
 from io import StringIO
-from .engine import SedgeEngine, ConfigOutput
+from .engine import SedgeEngine, Host, ConfigOutput, ParserException, OutputException
 from .keylib import KeyLibrary
-from nose.tools import eq_
+from nose.tools import eq_, raises
+
+
+def config_for_text(in_text):
+    library = KeyLibrary('/tmp', verbose=False)
+    return SedgeEngine(library, StringIO(in_text))
 
 
 def check_parse_result(in_text, expected_text):
-    library = KeyLibrary('/tmp', verbose=False)
-    config = SedgeEngine(library, StringIO(in_text))
+    config = config_for_text(in_text)
     fd = StringIO()
     out = ConfigOutput(fd)
     config.output(out)
@@ -186,6 +190,7 @@ def check_to_line(keyword, parts, expected, **kwargs):
     result = ConfigOutput.to_line(keyword, parts, **kwargs)
     eq_(result, expected)
 
+
 def test_to_line_no_args():
     check_to_line('Test', [], 'Test')
 
@@ -201,5 +206,39 @@ def test_to_line_one_arg_with_quotes():
 def test_to_line_two_args():
     check_to_line('Test', ['Arg1', 'Arg2'], 'Test Arg1 Arg2')
 
+
 def test_to_line_two_args_spaces():
     check_to_line('Test', ['Arg1 is Spacey', 'Arg2 is also Spacey'], 'Test "Arg1 is Spacey" "Arg2 is also Spacey"')
+
+
+@raises(OutputException)
+def test_to_line_two_args_spaces_quotes():
+    ConfigOutput.to_line('Test', ['This has a quote"', 'Eep'])
+
+
+@raises(ParserException)
+def test_root_is_fails():
+    config_for_text('@is a-thing')
+
+
+@raises(ParserException)
+def test_invalid_range_fails():
+    Host.expand_with(['{1}'])
+
+
+@raises(ParserException)
+def test_invalid_range_dup_fails():
+    Host.expand_with(['{1..2..4}'])
+
+
+@raises(ParserException)
+def test_invalid_range_nonint_fails():
+    Host.expand_with(['{1..cat}'])
+
+
+def test_expand():
+    eq_(['1', '2', '3'], Host.expand_with(['{1..3}']))
+
+
+def test_expand_range():
+    eq_(['1', '3'], Host.expand_with(['{1..3/2}']))

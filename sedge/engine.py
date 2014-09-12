@@ -181,12 +181,12 @@ class ConfigOutput:
             self._fd.write('\n')
         for i, line in enumerate(it):
             if i == 0:
-                self.need_break =  True
+                self.need_break = True
             self._fd.write(line + '\n')
 
     @classmethod
     def to_line(cls, keyword, parts, indent=0):
-        add_indent = lambda s: ' '*indent + s
+        add_indent = lambda s: ' ' * indent + s
         if len(parts) == 1:
             return add_indent(' '.join([keyword, '=', parts[0]]))
         out = [keyword]
@@ -198,6 +198,7 @@ class ConfigOutput:
             else:
                 out.append(part)
         return add_indent(' '.join(out))
+
 
 class SedgeEngine:
     """

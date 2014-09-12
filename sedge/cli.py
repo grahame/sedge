@@ -1,4 +1,5 @@
 import argparse
+import difflib
 import os.path
 import sys
 from tempfile import NamedTemporaryFile
@@ -28,6 +29,20 @@ def check_or_confirm_overwrite(fname):
     return True
 
 
+def diff_config_changes(before, after):
+    def get_data(f):
+        with open(f) as fd:
+            return fd.read().splitlines(True)
+    a = get_data(before)
+    b = get_data(after)
+    diff_lines = list(difflib.unified_diff(a, b))
+    if not diff_lines:
+        print("no changes.", file=sys.stderr)
+    else:
+        print('configuration changes:', file=sys.stderr)
+        print(''.join(diff_lines), file=sys.stderr)
+
+
 def process(args):
     def write_to(out):
         config.output(out)
@@ -41,12 +56,10 @@ def process(args):
     if not check_or_confirm_overwrite(args.output_file):
         print("Aborting.", file=sys.stderr)
         sys.exit(1)
-    with NamedTemporaryFile(
-            mode='w',
-            dir=os.path.dirname(args.output_file),
-            delete=False) as tmpf:
-        try:
-            tmpf.file.write('''\
+
+    tmpf = NamedTemporaryFile(mode='w', dir=os.path.dirname(args.output_file), delete=False)
+    try:
+        tmpf.file.write('''\
 # :sedge:
 #
 # this configuration generated from `sedge' file:
@@ -56,11 +69,14 @@ def process(args):
 #
 
 ''' % (args.output_file))
-            write_to(ConfigOutput(tmpf.file))
-            os.rename(tmpf.name, args.output_file)
-        except:
-            os.unlink(tmpf.name)
-            raise
+        write_to(ConfigOutput(tmpf.file))
+        tmpf.close()
+        if args.verbose:
+            diff_config_changes(args.output_file, tmpf.name)
+        os.rename(tmpf.name, args.output_file)
+    except:
+        os.unlink(tmpf.name)
+        raise
 
 
 def main():

@@ -236,6 +236,11 @@ def test_invalid_range_nonint_fails():
     Host.expand_with(['{1..cat}'])
 
 
+@raises(ParserException)
+def test_invalid_range_empty():
+    Host.expand_with(['{}'])
+
+
 def test_expand():
     eq_(['1', '2', '3'], Host.expand_with(['{1..3}']))
 

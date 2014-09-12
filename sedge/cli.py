@@ -29,6 +29,7 @@ def check_or_confirm_overwrite(fname):
 
 def process(args):
     library = KeyLibrary(args.key_directory)
+    library.scan()
     with open(args.config_file) as fd:
         config = SedgeConfig(library, fd)
     if args.output_file == '-':

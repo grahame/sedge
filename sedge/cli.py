@@ -57,3 +57,4 @@ def main():
                 os.rename(tmpf.name, args.output_file)
             except:
                 os.unlink(tmpf.name)
+                raise

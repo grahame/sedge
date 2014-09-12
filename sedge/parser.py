@@ -4,10 +4,7 @@ import pipes
 import sys
 from itertools import product
 from io import StringIO
-from .keylib import KeyLibrary, KeyNotFound
-
-
-library = KeyLibrary()
+from .keylib import KeyNotFound
 
 
 class ParserException(Exception):
@@ -50,11 +47,7 @@ class Section:
         visited_set.add(self)
         for identity in self.identities:
             lines += ['IdentitiesOnly']
-            fingerprint = config_access.get_fingerprint(identity)
-            try:
-                lines += ['IdentityFile', pipes.quote(library.lookup(fingerprint))]
-            except KeyNotFound:
-                raise ParserException("identity '%s' not found" % identity)
+            lines += ['IdentityFile', pipes.quote(config_access.get_keyfile(identity))]
         for section_name in self.types:
             section = config_access.get_section(section_name)
             lines += section.get_lines(config_access, visited_set)
@@ -169,8 +162,15 @@ class SectionConfigAccess:
     def get_section(self, name):
         return self._config._get_section_by_name(name)
 
-    def get_fingerprint(self, name):
-        return self._config._get_fingerprint(name)
+    def get_keyfile(self, name):
+        try:
+            fingerprint = self._config.keydefs[name]
+        except KeyError:
+            raise ParserException("identity '%s' is undefined (missing @key definition)" % name)
+        try:
+            return self._config._key_library.lookup(fingerprint)
+        except KeyNotFound:
+            raise ParserException("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
 
 
 class SedgeConfig:
@@ -178,7 +178,8 @@ class SedgeConfig:
     base parser for a sedge configuration file.
     handles all directives and expansions
     """
-    def __init__(self, fd, url=None):
+    def __init__(self, key_library, fd, url=None):
+        self._key_library = key_library
         self._url = url
         self.sections = [Root()]
         self.includes = []
@@ -235,7 +236,7 @@ class SedgeConfig:
             if urllib.parse.urlparse(url).scheme != 'https':
                 raise ParserException('error: @includes may only use https:// URLs')
             req = requests.get(url, verify=True)
-            subconfig = SedgeConfig(StringIO(req.text), url=url)
+            subconfig = SedgeConfig(self._key_library, StringIO(req.text), url=url)
             self.includes.append((url, subconfig))
 
         def handle_keydef(section, parts):

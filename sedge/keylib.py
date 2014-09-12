@@ -3,7 +3,8 @@ class KeyNotFound(Exception):
 
 
 class KeyLibrary:
-    def __init__(self):
+    def __init__(self, path):
+        self._path = path
         self.keys_by_fingerprint = {}
 
     def scan(self):

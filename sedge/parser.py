@@ -179,29 +179,38 @@ class SedgeConfig:
                 root.add_pending_with(parts)
                 return True
 
+        def handle_add_type(section, parts):
+            if len(parts) != 1:
+                raise ParserException('usage: @is <HostAttrName>')
+            section.add_type(parts[0])
+
+
+        def handle_via(section, parts):
+            if len(parts) != 1:
+                raise ParserException('usage: @is <Hostname>')
+            section.add_line(
+                'ProxyCommand',
+                ('ssh %s nc %%h %%p 2> /dev/null' %
+                    (pipes.quote(parts[0])),))
+
+        def handle_include(section, parts):
+            if len(parts) != 1:
+                raise ParserException('usage: @include <https://...>')
+            url = parts[0]
+            if urllib.parse.urlparse(url).scheme != 'https':
+                raise ParserException('error: @includes may only use https:// URLs')
+            req = requests.get(url, verify=True)
+            subconfig = SedgeConfig(StringIO(req.text), url=url)
+            self.includes.append((url, subconfig))
+
         def handle_expansion(section, keyword, parts):
-            if keyword == '@is':
-                if len(parts) != 1:
-                    raise ParserException('usage: @is <HostAttrName>')
-                section.add_type(parts[0])
-                return True
-            if keyword == '@via':
-                if len(parts) != 1:
-                    raise ParserException('usage: @is <Hostname>')
-                section.add_line(
-                    'ProxyCommand',
-                    ('ssh %s nc %%h %%p 2> /dev/null' %
-                        (pipes.quote(parts[0])),))
-                return True
-            if keyword == '@include':
-                if len(parts) != 1:
-                    raise ParserException('usage: @include <https://...>')
-                url = parts[0]
-                if urllib.parse.urlparse(url).scheme != 'https':
-                    raise ParserException('error: @includes may only use https:// URLs')
-                req = requests.get(url, verify=True)
-                subconfig = SedgeConfig(StringIO(req.text), url=url)
-                self.includes.append((url, subconfig))
+            handlers = {
+                '@is': handle_add_type,
+                '@via': handle_via,
+                '@include': handle_include
+            }
+            if keyword in handlers:
+                handlers[keyword](section, parts)
                 return True
 
         for line in (t.strip() for t in fd):

@@ -180,3 +180,26 @@ def test_parser_equals_bothspc():
 
 def test_parser_equals_allthespc():
     check_config_parser('Keyword   =   Value', ('Keyword', ['Value']))
+
+
+def check_to_line(keyword, parts, expected, **kwargs):
+    result = ConfigOutput.to_line(keyword, parts, **kwargs)
+    eq_(result, expected)
+
+def test_to_line_no_args():
+    check_to_line('Test', [], 'Test')
+
+
+def test_to_line_one_arg():
+    check_to_line('Test', ['Hello'], 'Test = Hello')
+
+
+def test_to_line_one_arg_with_quotes():
+    check_to_line('Test', ['Hello "fun fun'], 'Test = Hello "fun fun')
+
+
+def test_to_line_two_args():
+    check_to_line('Test', ['Arg1', 'Arg2'], 'Test Arg1 Arg2')
+
+def test_to_line_two_args_spaces():
+    check_to_line('Test', ['Arg1 is Spacey', 'Arg2 is also Spacey'], 'Test "Arg1 is Spacey" "Arg2 is also Spacey"')

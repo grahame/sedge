@@ -16,7 +16,6 @@ class KeyLibrary:
         self._path = path
         self.keys_by_fingerprint = {}
 
-
     def _generate_public_key(self, fname):
         pkey_fname = fname + '.pub'
         if os.access(pkey_fname, os.R_OK):
@@ -37,7 +36,7 @@ class KeyLibrary:
         parts = [s for s in (t.strip() for t in output.split(' ')) if s]
         if len(parts) != 4:
             raise FingerprintDoesNotParse()
-            raise 
+            raise
         return parts[1]
 
     def _scan_key(self, fname, recurse=False):

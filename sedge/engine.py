@@ -247,6 +247,7 @@ class SedgeEngine:
 
         def handle_expansion(section, keyword, parts):
             handlers = {
+                # '@set': handle_set_value,
                 '@is': handle_add_type,
                 '@via': handle_via,
                 '@include': handle_include,
@@ -260,8 +261,11 @@ class SedgeEngine:
         for line in (t.strip() for t in fd):
             if line.startswith('#') or line == '':
                 continue
-            parts = [t.strip() for t in line.split()]
-            keyword, parts = parts[0], parts[1:]
+            keyword_split = [t.strip() for t in line.split(' ', 1)]
+            keyword, other = keyword_split[0], ''            
+            if len(keyword_split) == 2:
+                other = keyword_split[1]
+            parts = [t.strip() for t in other.split(' ')]
             if handle_section_defn(keyword, parts):
                 continue
             if handle_vardef(self.sections[0], keyword, parts):
@@ -272,7 +276,10 @@ class SedgeEngine:
             if keyword.startswith('@'):
                 raise ParserException(
                     "unknown expansion keyword '%s'" % (keyword))
-            current_section.add_line(keyword, parts)
+            # use other rather than parts to avoid messing up user
+            # whitespace; we don't handle quotes in here as we don't
+            # need to
+            current_section.add_line(keyword, [t for t in [other] if t])
 
     def sections_for_cls(self, cls):
         return (t for t in self.sections if isinstance(t, cls))

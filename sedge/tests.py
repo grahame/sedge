@@ -4,12 +4,12 @@ from .keylib import KeyLibrary
 from nose.tools import eq_
 
 
-def check_parse_result(in_text, out_text):
+def check_parse_result(in_text, expected_text):
     library = KeyLibrary('/tmp', verbose=False)
     config = SedgeEngine(library, StringIO(in_text))
     outfd = StringIO()
     config.output(outfd)
-    eq_(out_text, outfd.getvalue())
+    eq_(expected_text, outfd.getvalue())
 
 
 def test_empty_file():

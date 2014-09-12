@@ -2,7 +2,7 @@ import argparse
 import os.path
 import sys
 from tempfile import NamedTemporaryFile
-from .parser import SedgeConfig
+from .parser import SedgeConfig, ParserException
 
 
 def ask_overwrite(fname):
@@ -27,17 +27,7 @@ def check_or_confirm_overwrite(fname):
     return True
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'config_file',
-        default=os.path.expanduser('~/.sedge/config'),
-        nargs='?')
-    parser.add_argument(
-        'output_file',
-        default=os.path.expanduser('~/.ssh/config'),
-        nargs='?')
-    args = parser.parse_args()
+def process(args):
     with open(args.config_file) as fd:
         config = SedgeConfig(fd)
     if args.output_file == '-':
@@ -58,3 +48,20 @@ def main():
             except:
                 os.unlink(tmpf.name)
                 raise
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'config_file',
+        default=os.path.expanduser('~/.sedge/config'),
+        nargs='?')
+    parser.add_argument(
+        'output_file',
+        default=os.path.expanduser('~/.ssh/config'),
+        nargs='?')
+    args = parser.parse_args()
+    try:
+        process(args)
+    except ParserException as e:
+        print('Error: %s' % (e), file=sys.stderr)

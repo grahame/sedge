@@ -133,6 +133,34 @@ def test_parser_quotearg_nospc():
     check_config_parser('Keyword "Arg1"', ('Keyword', ['Arg1']))
 
 
+def test_parser_quotearg_withspc():
+    check_config_parser('Keyword "Arg1 NotArg2"', ('Keyword', ['Arg1 NotArg2']))
+
+
+def test_parser_quotearg_withspc_and_leading():
+    check_config_parser('Keyword  "Arg1 NotArg2"', ('Keyword', ['Arg1 NotArg2']))
+
+
+def test_parser_quotearg_withspc_and_trailing():
+    check_config_parser('Keyword "Arg1 NotArg2" ', ('Keyword', ['Arg1 NotArg2']))
+
+
+def test_parser_quotearg_withspc_and_leadin_and_trailing():
+    check_config_parser('Keyword  "Arg1 NotArg2" ', ('Keyword', ['Arg1 NotArg2']))
+
+
+def test_parser_quotearg_noquotearg():
+    check_config_parser('Keyword "Arg1 NotArg2" Arg2', ('Keyword', ['Arg1 NotArg2', 'Arg2']))
+
+
+def test_parser_noquotearg_quotearg():
+    check_config_parser('Keyword Arg1 "Arg2 NotArg3"', ('Keyword', ['Arg1', 'Arg2 NotArg3']))
+
+
+def test_parser_quotearg_noquotearg_quotearg():
+    check_config_parser('Keyword "Arg1 NotArg2" Arg2', ('Keyword', ['Arg1 NotArg2', 'Arg2']))
+
+
 def test_parser_equals_nospc():
     check_config_parser('Keyword=Value', ('Keyword', ['Value']))
 

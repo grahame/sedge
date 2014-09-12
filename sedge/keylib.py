@@ -56,6 +56,8 @@ class KeyLibrary:
         skip = set(('config', 'known_hosts', 'authorized_keys'))
         for dirpath, dirnames, fnames in os.walk(self._path):
             for name, path in ((t, os.path.join(dirpath, t)) for t in fnames):
+                if name.startswith('.'):
+                    continue
                 if name.endswith('.pub'):
                     continue
                 if name in skip:

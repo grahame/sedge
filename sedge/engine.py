@@ -46,7 +46,7 @@ class Section:
         lines = self.lines.copy()
         visited_set.add(self)
         for identity in self.identities:
-            lines.append(('IdentitiesOnly', []))
+            lines.append(('IdentitiesOnly', ['yes']))
             lines.append(('IdentityFile', [pipes.quote(config_access.get_keyfile(identity))]))
         for section_name in self.types:
             section = config_access.get_section(section_name)
@@ -191,6 +191,7 @@ class SedgeEngine:
         in_quote = False
         args = []
         current = []
+
         def pop_current():
             val = ''.join(current)
             if val:
@@ -207,7 +208,7 @@ class SedgeEngine:
                 if c == '"':
                     if len(current) > 0:
                         raise ParserException('quotation marks cannot be used within an argument value')
-                    in_quotes = True
+                    in_quote = True
                 else:
                     if c == ' ':
                         pop_current()
@@ -217,7 +218,6 @@ class SedgeEngine:
             raise ParserException('unterminated quotation marks')
         pop_current()
         return args
-
 
     @classmethod
     def parse_config_line(cls, line):
@@ -232,7 +232,6 @@ class SedgeEngine:
             return line_parts[0].rstrip(), [line_parts[1].lstrip()]
         else:
             line_parts = line.strip().split(' ', 1)
-            keyword = line_parts[0]
             other = ''
             if len(line_parts) == 2:
                 other = line_parts[1].strip()

@@ -101,32 +101,53 @@ def check_config_parser(s, expected):
     eq_(result, expected)
 
 
-def test_parser_onearg():
+def test_parser_noarg():
     check_config_parser('Keyword', ('Keyword', []))
 
-def test_parser_onearg_trailingspc():
+
+def test_parser_noarg_trailingspc():
     check_config_parser('Keyword ', ('Keyword', []))
 
-def test_parser_onearg_leadingspc():
+
+def test_parser_noarg_leadingspc():
     check_config_parser(' Keyword', ('Keyword', []))
 
-def test_parser_twoargs():
+
+def test_parser_onearg():
     check_config_parser('Keyword Arg1', ('Keyword', ['Arg1']))
 
-def test_parser_twoargs_dblspc():
+
+def test_parser_onearg_dblspc():
     check_config_parser('Keyword  Arg1', ('Keyword', ['Arg1']))
+
+
+def test_parser_twoargs():
+    check_config_parser('Keyword Arg1 Arg2', ('Keyword', ['Arg1', 'Arg2']))
+
+
+def test_parser_twoargs_dblspc():
+    check_config_parser('Keyword  Arg1  Arg2', ('Keyword', ['Arg1', 'Arg2']))
+
+
+def test_parser_quotearg_nospc():
+    check_config_parser('Keyword "Arg1"', ('Keyword', ['Arg1']))
+
 
 def test_parser_equals_nospc():
     check_config_parser('Keyword=Value', ('Keyword', ['Value']))
 
+
 def test_parser_equals_leftspc():
     check_config_parser('Keyword =Value', ('Keyword', ['Value']))
+
 
 def test_parser_equals_rightspc():
     check_config_parser('Keyword= Value', ('Keyword', ['Value']))
 
+
 def test_parser_equals_bothspc():
     check_config_parser('Keyword = Value', ('Keyword', ['Value']))
+
 
 def test_parser_equals_allthespc():
     check_config_parser('Keyword   =   Value', ('Keyword', ['Value']))

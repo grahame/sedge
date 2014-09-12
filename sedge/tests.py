@@ -67,16 +67,16 @@ Host blah
 ''', '\nHost blah\n    ProxyCommand ssh gateway nc %h %p 2> /dev/null\n\n')
 
 
-def test_include():
-    check_parse_result('''
-@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/simple.sedge
-''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
+# def test_include():
+#     check_parse_result('''
+# @include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/simple.sedge
+# ''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
 
 
-def test_include_strips_root():
-    check_parse_result('''
-@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/strip_global.sedge
-''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
+# def test_include_strips_root():
+#     check_parse_result('''
+# @include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/strip_global.sedge
+# ''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
 
 
 def check_fingerprint(data, fingerprint):
@@ -94,3 +94,39 @@ def test_fingerprint_parser_double_space():
     check_fingerprint(
         '2048 aa:cb:d2:e2:00:6f:21:b4:fe:39:92:ed:eb:5e:4d:38  grahame@anglachel (RSA)',
         'aa:cb:d2:e2:00:6f:21:b4:fe:39:92:ed:eb:5e:4d:38')
+
+
+def check_config_parser(s, expected):
+    result = SedgeEngine.parse_config_line(s)
+    eq_(result, expected)
+
+
+def test_parser_onearg():
+    check_config_parser('Keyword', ('Keyword', []))
+
+def test_parser_onearg_trailingspc():
+    check_config_parser('Keyword ', ('Keyword', []))
+
+def test_parser_onearg_leadingspc():
+    check_config_parser(' Keyword', ('Keyword', []))
+
+def test_parser_twoargs():
+    check_config_parser('Keyword Arg1', ('Keyword', ['Arg1']))
+
+def test_parser_twoargs_dblspc():
+    check_config_parser('Keyword  Arg1', ('Keyword', ['Arg1']))
+
+def test_parser_equals_nospc():
+    check_config_parser('Keyword=Value', ('Keyword', ['Value']))
+
+def test_parser_equals_leftspc():
+    check_config_parser('Keyword =Value', ('Keyword', ['Value']))
+
+def test_parser_equals_rightspc():
+    check_config_parser('Keyword= Value', ('Keyword', ['Value']))
+
+def test_parser_equals_bothspc():
+    check_config_parser('Keyword = Value', ('Keyword', ['Value']))
+
+def test_parser_equals_allthespc():
+    check_config_parser('Keyword   =   Value', ('Keyword', ['Value']))

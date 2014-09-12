@@ -186,6 +186,58 @@ class SedgeEngine:
         self.keydefs = {}
         self.parse(fd)
 
+    @classmethod
+    def parse_other_space(cls, other):
+        in_quote = False
+        args = []
+        current = []
+        def pop_current():
+            val = ''.join(current)
+            if val:
+                args.append(val)
+            current.clear()
+        for c in other:
+            if in_quote:
+                if c == '"':
+                    in_quote = False
+                    pop_current()
+                else:
+                    current.append(c)
+            else:
+                if c == '"':
+                    if len(current) > 0:
+                        raise ParserException('quotation marks cannot be used within an argument value')
+                    in_quotes = True
+                else:
+                    if c == ' ':
+                        pop_current()
+                    else:
+                        current.append(c)
+        if in_quote:
+            raise ParserException('unterminated quotation marks')
+        pop_current()
+        return args
+
+
+    @classmethod
+    def parse_config_line(cls, line):
+        # ... format ``keyword arguments''.  Configuration options may be
+        # separated by whitespace or optional whitespace and exactly one `='; the
+        # latter format is useful to avoid the need to quote whitespace when speci-
+        # fying configuration options using the ssh, scp, and sftp -o option.
+        # Arguments may optionally be enclosed in double quotes (") in order to
+        # represent arguments containing spaces.
+        if '=' in line:
+            line_parts = line.strip().split('=', 1)
+            return line_parts[0].rstrip(), [line_parts[1].lstrip()]
+        else:
+            line_parts = line.strip().split(' ', 1)
+            keyword = line_parts[0]
+            other = ''
+            if len(line_parts) == 2:
+                other = line_parts[1].strip()
+            return line_parts[0], SedgeEngine.parse_other_space(other)
+
     def parse(self, fd):
         "very simple parser - but why would we want it to be complex?"
 
@@ -262,7 +314,7 @@ class SedgeEngine:
             if line.startswith('#') or line == '':
                 continue
             keyword_split = [t.strip() for t in line.split(' ', 1)]
-            keyword, other = keyword_split[0], ''            
+            keyword, other = keyword_split[0], ''
             if len(keyword_split) == 2:
                 other = keyword_split[1]
             parts = [t.strip() for t in other.split(' ')]

@@ -4,6 +4,10 @@ import pipes
 import sys
 from itertools import product
 from io import StringIO
+from .keylib import KeyLibrary, KeyNotFound
+
+
+library = KeyLibrary()
 
 
 class ParserException(Exception):
@@ -17,6 +21,7 @@ class Section:
         self.lines = []
         self.types = []
         self.expansions = []
+        self.identities = []
 
     def has_lines(self):
         return len(self.lines) > 0
@@ -30,7 +35,10 @@ class Section:
     def add_expansion(self, parts):
         self.expansions.append(parts)
 
-    def get_lines(self, section_lookup_fn, visited_set):
+    def add_identity(self, name):
+        self.identities.append(name)
+
+    def get_lines(self, config_access, visited_set):
         """
         get the lines for this section
         visited_set is used to avoid visiting same section
@@ -40,9 +48,16 @@ class Section:
             return []
         lines = self.lines.copy()
         visited_set.add(self)
+        for identity in self.identities:
+            lines += ['IdentitiesOnly']
+            fingerprint = config_access.get_fingerprint(identity)
+            try:
+                lines += ['IdentityFile', pipes.quote(library.lookup(fingerprint))]
+            except KeyNotFound:
+                raise ParserException("identity '%s' not found" % identity)
         for section_name in self.types:
-            section = section_lookup_fn(section_name)
-            lines += section.get_lines(section_lookup_fn, visited_set)
+            section = config_access.get_section(section_name)
+            lines += section.get_lines(config_access, visited_set)
         return lines
 
     def __repr__(self):
@@ -111,10 +126,10 @@ class Host(Section):
         # if not a range, return as literal
         return defn
 
-    def resolve_defn(self, section_lookup_fn):
+    def resolve_defn(self, config_access):
         visited = set()
         lines = ['Host %s' % (self.name)]
-        for keyword, parts in self.get_lines(section_lookup_fn, visited):
+        for keyword, parts in self.get_lines(config_access, visited):
             line = '    %s %s' % (keyword, ' '.join(parts))
             lines.append(line)
         return '\n'.join(lines)
@@ -125,7 +140,7 @@ class Host(Section):
             text = text.replace(defn, str(value))
         return text
 
-    def get_hostdefs(self, section_lookup_fn):
+    def get_hostdefs(self, config_access):
         """
         returns a list of host definitions
         """
@@ -135,12 +150,27 @@ class Host(Section):
         for with_defn in self.with_exprs:
             names.append(with_defn[0])
             vals.append(Host.expand_with(with_defn[1:]))
-        defn_text = self.resolve_defn(section_lookup_fn)
+        defn_text = self.resolve_defn(config_access)
         for val_tpl in product(*vals):
             val_dict = dict(zip(names, val_tpl))
             hostdefs.append(
                 self.apply_substitutions(defn_text, val_dict))
         return hostdefs
+
+
+class SectionConfigAccess:
+    """
+    sections may require access to other parts of the file.
+    this class provides that access.
+    """
+    def __init__(self, config):
+        self._config = config
+
+    def get_section(self, name):
+        return self._config._get_section_by_name(name)
+
+    def get_fingerprint(self, name):
+        return self._config._get_fingerprint(name)
 
 
 class SedgeConfig:
@@ -152,6 +182,7 @@ class SedgeConfig:
         self._url = url
         self.sections = [Root()]
         self.includes = []
+        self.keydefs = {}
         self.parse(fd)
 
     def parse(self, fd):
@@ -184,7 +215,6 @@ class SedgeConfig:
                 raise ParserException('usage: @is <HostAttrName>')
             section.add_type(parts[0])
 
-
         def handle_via(section, parts):
             if len(parts) != 1:
                 raise ParserException('usage: @is <Hostname>')
@@ -192,6 +222,11 @@ class SedgeConfig:
                 'ProxyCommand',
                 ('ssh %s nc %%h %%p 2> /dev/null' %
                     (pipes.quote(parts[0])),))
+
+        def handle_identity(section, parts):
+            if len(parts) != 1:
+                raise ParserException('usage: @identity <name>')
+            section.add_identity(parts[0])
 
         def handle_include(section, parts):
             if len(parts) != 1:
@@ -203,11 +238,19 @@ class SedgeConfig:
             subconfig = SedgeConfig(StringIO(req.text), url=url)
             self.includes.append((url, subconfig))
 
+        def handle_keydef(section, parts):
+            if len(parts) != 2:
+                raise ParserException('usage: @key <name> <fingerprint>')
+            name, fingerprint = parts
+            self.keydefs[name] = fingerprint
+
         def handle_expansion(section, keyword, parts):
             handlers = {
                 '@is': handle_add_type,
                 '@via': handle_via,
-                '@include': handle_include
+                '@include': handle_include,
+                '@key': handle_keydef,
+                '@identity': handle_identity
             }
             if keyword in handlers:
                 handlers[keyword](section, parts)
@@ -242,6 +285,10 @@ class SedgeConfig:
             raise ParserException("No such section: %s" % (name))
         return matches[0]
 
+    def _get_fingerprint(self, name):
+        if name not in self.keydefs:
+            raise ParserException("Referenced identity '%s' does not exist." % (name))
+
     def output(self, fd, is_include=False):
         # output global config from root section
         root = self.sections[0]
@@ -255,7 +302,7 @@ class SedgeConfig:
         else:
             root.output_lines(fd)
         for host in self.sections_for_cls(Host):
-            for hostdef in host.get_hostdefs(self._get_section_by_name):
+            for hostdef in host.get_hostdefs(SectionConfigAccess(self)):
                 fd.write(hostdef)
                 fd.write('\n\n')
         for url, subconfig in self.includes:

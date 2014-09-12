@@ -56,4 +56,4 @@ def main():
                 config.output(tmpf.file)
                 os.rename(tmpf.name, args.output_file)
             except:
-                os.unlink(tmpf.file)
+                os.unlink(tmpf.name)

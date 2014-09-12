@@ -1,5 +1,5 @@
 from io import StringIO
-from .engine import SedgeEngine
+from .engine import SedgeEngine, ConfigOutput
 from .keylib import KeyLibrary
 from nose.tools import eq_
 
@@ -7,13 +7,14 @@ from nose.tools import eq_
 def check_parse_result(in_text, expected_text):
     library = KeyLibrary('/tmp', verbose=False)
     config = SedgeEngine(library, StringIO(in_text))
-    outfd = StringIO()
-    config.output(outfd)
-    eq_(expected_text, outfd.getvalue())
+    fd = StringIO()
+    out = ConfigOutput(fd)
+    config.output(out)
+    eq_(expected_text, fd.getvalue())
 
 
 def test_empty_file():
-    check_parse_result('', '\n')
+    check_parse_result('', '')
 
 
 def test_global_option():
@@ -21,14 +22,14 @@ def test_global_option():
 
 
 def test_single_host_stanza():
-    check_parse_result('Host blah\n', '\nHost blah\n\n')
+    check_parse_result('Host blah\n', 'Host = blah\n')
 
 
 def test_expansion():
     check_parse_result('''
 @with i 1 2
 Host percival<i>
-''', '\nHost percival1\n\nHost percival2\n\n')
+''', 'Host = percival1\n\nHost = percival2\n')
 
 
 def test_combinatoric_expansion():
@@ -36,7 +37,7 @@ def test_combinatoric_expansion():
 @with i 1 2
 @with j 4 5
 Host p<i>-<j>
-''', '\nHost p1-4\n\nHost p1-5\n\nHost p2-4\n\nHost p2-5\n\n')
+''', 'Host = p1-4\n\nHost = p1-5\n\nHost = p2-4\n\nHost = p2-5\n')
 
 
 def test_simple_is():
@@ -45,7 +46,7 @@ def test_simple_is():
     SomeOption Yes
 Host blah
     @is a
-''', '\nHost blah\n    SomeOption Yes\n\n')
+''', 'Host = blah\n    SomeOption = Yes\n')
 
 
 def test_double_is():
@@ -57,26 +58,26 @@ def test_double_is():
 Host blah
     @is a
     @is b
-''', '\nHost blah\n    SomeOption Yes\n    AnotherOption No\n\n')
+''', 'Host = blah\n    SomeOption = Yes\n    AnotherOption = No\n')
 
 
 def test_via():
     check_parse_result('''
 Host blah
     @via gateway
-''', '\nHost blah\n    ProxyCommand ssh gateway nc %h %p 2> /dev/null\n\n')
+''', 'Host = blah\n    ProxyCommand = ssh gateway nc %h %p 2> /dev/null\n')
 
 
-# def test_include():
-#     check_parse_result('''
-# @include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/simple.sedge
-# ''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
+def test_include():
+    check_parse_result('''
+@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/simple.sedge
+''', 'Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n')
 
 
-# def test_include_strips_root():
-#     check_parse_result('''
-# @include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/strip_global.sedge
-# ''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
+def test_include_strips_root():
+    check_parse_result('''
+@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/strip_global.sedge
+''', 'Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n')
 
 
 def check_fingerprint(data, fingerprint):

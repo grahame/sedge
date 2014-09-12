@@ -79,13 +79,9 @@ class Root(Section):
     def has_pending_with(self):
         return len(self.pending_with) > 0
 
-    def output_lines(self, fd):
+    def output_lines(self):
         for keyword, parts in sorted(self.lines):
-            line = keyword
-            if parts:
-                line += ' ' + ' '.join(parts)
-            fd.write(line)
-        fd.write('\n')
+            yield ConfigOutput.to_line(keyword, parts)
 
 
 class HostAttrs(Section):
@@ -115,40 +111,42 @@ class Host(Section):
             except ValueError:
                 raise ParserException(
                     'expected an integer in range definition.')
-            return list(range(from_val, to_val, incr))
+            return list(str(t) for t in range(from_val, to_val, incr))
         # if not a range, return as literal
         return defn
 
     def resolve_defn(self, config_access):
         visited = set()
-        lines = ['Host %s' % (self.name)]
+        lines = [ConfigOutput.to_line('Host', [self.name])]
         for keyword, parts in self.get_lines(config_access, visited):
-            line = '    %s %s' % (keyword, ' '.join(parts))
-            lines.append(line)
-        return '\n'.join(lines)
+            lines.append(ConfigOutput.to_line(keyword, parts, indent=4))
+        return lines
 
-    def apply_substitutions(self, text, val_dict):
-        for name, value in val_dict.items():
-            defn = '<%s>' % (name)
-            text = text.replace(defn, str(value))
-        return text
+    def apply_substitutions(self, lines, val_dict):
+        for line in lines:
+            for subst, value in val_dict.items():
+                line = line.replace(subst, value)
+            yield line
 
-    def get_hostdefs(self, config_access):
+    def variable_iter(self):
+        """
+        returns iterator over the cross product of the variables
+        for thsis stanza
+        """
+        substs = []
+        vals = []
+        for with_defn in self.with_exprs:
+            substs.append('<' + with_defn[0] + '>')
+            vals.append(Host.expand_with(with_defn[1:]))
+        return (dict(zip(substs, val_tpl)) for val_tpl in product(*vals))
+
+    def host_stanzas(self, config_access):
         """
         returns a list of host definitions
         """
-        hostdefs = []
-        names = []
-        vals = []
-        for with_defn in self.with_exprs:
-            names.append(with_defn[0])
-            vals.append(Host.expand_with(with_defn[1:]))
-        defn_text = self.resolve_defn(config_access)
-        for val_tpl in product(*vals):
-            val_dict = dict(zip(names, val_tpl))
-            hostdefs.append(
-                self.apply_substitutions(defn_text, val_dict))
-        return hostdefs
+        defn_lines = self.resolve_defn(config_access)
+        for val_dict in self.variable_iter():
+            yield list(self.apply_substitutions(defn_lines, val_dict))
 
 
 class SectionConfigAccess:
@@ -172,6 +170,34 @@ class SectionConfigAccess:
         except KeyNotFound:
             raise ParserException("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
 
+
+class ConfigOutput:
+    def __init__(self, fd):
+        self._fd = fd
+        self.need_break = False
+
+    def write_stanza(self, it):
+        if self.need_break:
+            self._fd.write('\n')
+        for i, line in enumerate(it):
+            if i == 0:
+                self.need_break =  True
+            self._fd.write(line + '\n')
+
+    @classmethod
+    def to_line(cls, keyword, parts, indent=0):
+        add_indent = lambda s: ' '*indent + s
+        if len(parts) == 1:
+            return add_indent(' '.join([keyword, '=', parts[0]]))
+        out = [keyword]
+        for part in parts:
+            if '"' in part:
+                raise ParserException("quotation marks may not be used in arguments")
+            if ' ' in part:
+                out.append('"%s"' % part)
+            else:
+                out.append(part)
+        return add_indent(' '.join(out))
 
 class SedgeEngine:
     """
@@ -309,7 +335,7 @@ class SedgeEngine:
                 handlers[keyword](section, parts)
                 return True
 
-        for line in fd:
+        for line in (t.strip() for t in fd):
             if line.startswith('#') or line == '':
                 continue
             keyword, parts = SedgeEngine.parse_config_line(line)
@@ -344,7 +370,12 @@ class SedgeEngine:
         if name not in self.keydefs:
             raise ParserException("Referenced identity '%s' does not exist." % (name))
 
-    def output(self, fd, is_include=False):
+    def host_stanzas(self):
+        for host in self.sections_for_cls(Host):
+            for stanza in host.host_stanzas(SectionConfigAccess(self)):
+                yield stanza
+
+    def output(self, out, is_include=False):
         # output global config from root section
         root = self.sections[0]
         if is_include:
@@ -352,13 +383,14 @@ class SedgeEngine:
                 print("Warning: global config in @include '%s' ignored." % (self._url), file=sys.stderr)
                 print("Ignored lines are:", file=sys.stderr)
                 warning_fd = StringIO()
-                root.output_lines(warning_fd)
+                warning_out = ConfigOutput(warning_fd)
+                warning_out.write_stanza(root.output_lines())
                 print("\n".join([" > " + t for t in warning_fd.getvalue().splitlines()]), file=sys.stderr)
         else:
-            root.output_lines(fd)
-        for host in self.sections_for_cls(Host):
-            for hostdef in host.get_hostdefs(SectionConfigAccess(self)):
-                fd.write(hostdef)
-                fd.write('\n\n')
+            out.write_stanza(root.output_lines())
+
+        for stanza in self.host_stanzas():
+            out.write_stanza(stanza)
+
         for url, subconfig in self.includes:
-            subconfig.output(fd, is_include=True)
+            subconfig.output(out, is_include=True)

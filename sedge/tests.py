@@ -1,12 +1,12 @@
 from io import StringIO
-from .engine import SedgeConfig
+from .engine import SedgeEngine
 from .keylib import KeyLibrary
 from nose.tools import eq_
 
 
 def check_parse_result(in_text, out_text):
-    library = KeyLibrary('/tmp')
-    config = SedgeConfig(library, StringIO(in_text))
+    library = KeyLibrary('/tmp', verbose=False)
+    config = SedgeEngine(library, StringIO(in_text))
     outfd = StringIO()
     config.output(outfd)
     eq_(out_text, outfd.getvalue())

@@ -173,7 +173,7 @@ class SectionConfigAccess:
             raise ParserException("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
 
 
-class SedgeConfig:
+class SedgeEngine:
     """
     base parser for a sedge configuration file.
     handles all directives and expansions
@@ -236,7 +236,7 @@ class SedgeConfig:
             if urllib.parse.urlparse(url).scheme != 'https':
                 raise ParserException('error: @includes may only use https:// URLs')
             req = requests.get(url, verify=True)
-            subconfig = SedgeConfig(self._key_library, StringIO(req.text), url=url)
+            subconfig = SedgeEngine(self._key_library, StringIO(req.text), url=url)
             self.includes.append((url, subconfig))
 
         def handle_keydef(section, parts):

@@ -2,7 +2,7 @@ import argparse
 import os.path
 import sys
 from tempfile import NamedTemporaryFile
-from .engine import SedgeConfig, ParserException
+from .engine import SedgeEngine, ParserException
 from .keylib import KeyLibrary
 
 
@@ -32,7 +32,7 @@ def process(args):
     library = KeyLibrary(args.key_directory, verbose=args.verbose)
     library.scan()
     with open(args.config_file) as fd:
-        config = SedgeConfig(library, fd)
+        config = SedgeEngine(library, fd)
     if args.output_file == '-':
         config.output(sys.stdout)
     else:

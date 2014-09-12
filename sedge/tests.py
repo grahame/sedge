@@ -1,10 +1,12 @@
 from io import StringIO
 from .parser import SedgeConfig
+from .keylib import KeyLibrary
 from nose.tools import eq_
 
 
 def check_parse_result(in_text, out_text):
-    config = SedgeConfig(StringIO(in_text))
+    library = KeyLibrary('/tmp')
+    config = SedgeConfig(library, StringIO(in_text))
     outfd = StringIO()
     config.output(outfd)
     eq_(out_text, outfd.getvalue())
@@ -75,3 +77,20 @@ def test_include_strips_root():
     check_parse_result('''
 @include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/strip_global.sedge
 ''', '\nHost percival\n    HostName beaking\n    ForwardAgent yes\n    ForwardX11 yes\n\n')
+
+
+def check_fingerprint(data, fingerprint):
+    determined = KeyLibrary._fingerprint_from_keyinfo(data)
+    eq_(determined, fingerprint)
+
+
+def test_fingerprint_parser():
+    check_fingerprint(
+        '2048 aa:cb:d2:e2:00:6f:21:b4:fe:39:92:ed:eb:5e:4d:38 grahame@anglachel (RSA)',
+        'aa:cb:d2:e2:00:6f:21:b4:fe:39:92:ed:eb:5e:4d:38')
+
+
+def test_fingerprint_parser_double_space():
+    check_fingerprint(
+        '2048 aa:cb:d2:e2:00:6f:21:b4:fe:39:92:ed:eb:5e:4d:38  grahame@anglachel (RSA)',
+        'aa:cb:d2:e2:00:6f:21:b4:fe:39:92:ed:eb:5e:4d:38')

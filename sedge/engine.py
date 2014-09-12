@@ -309,14 +309,10 @@ class SedgeEngine:
                 handlers[keyword](section, parts)
                 return True
 
-        for line in (t.strip() for t in fd):
+        for line in fd:
             if line.startswith('#') or line == '':
                 continue
-            keyword_split = [t.strip() for t in line.split(' ', 1)]
-            keyword, other = keyword_split[0], ''
-            if len(keyword_split) == 2:
-                other = keyword_split[1]
-            parts = [t.strip() for t in other.split(' ')]
+            keyword, parts = SedgeEngine.parse_config_line(line)
             if handle_section_defn(keyword, parts):
                 continue
             if handle_vardef(self.sections[0], keyword, parts):
@@ -330,7 +326,7 @@ class SedgeEngine:
             # use other rather than parts to avoid messing up user
             # whitespace; we don't handle quotes in here as we don't
             # need to
-            current_section.add_line(keyword, [t for t in [other] if t])
+            current_section.add_line(keyword, parts)
 
     def sections_for_cls(self, cls):
         return (t for t in self.sections if isinstance(t, cls))

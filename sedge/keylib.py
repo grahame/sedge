@@ -12,8 +12,9 @@ class FingerprintDoesNotParse(Exception):
 
 
 class KeyLibrary:
-    def __init__(self, path):
+    def __init__(self, path, verbose):
         self._path = path
+        self._verbose = verbose
         self.keys_by_fingerprint = {}
 
     def _generate_public_key(self, fname):
@@ -61,6 +62,8 @@ class KeyLibrary:
                     continue
                 fingerprint = self._scan_key(path)
                 if fingerprint is not None:
+                    if self._verbose:
+                        print("scanned key '%s' fingerprint '%s'" % (os.path.relpath(path, self._path), fingerprint))
                     self.keys_by_fingerprint[fingerprint] = path
 
     def lookup(self, fingerprint):

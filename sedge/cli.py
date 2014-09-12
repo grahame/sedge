@@ -2,7 +2,7 @@ import argparse
 import os.path
 import sys
 from tempfile import NamedTemporaryFile
-from .parser import SedgeConfig, ParserException
+from .engine import SedgeConfig, ParserException
 from .keylib import KeyLibrary
 
 
@@ -29,7 +29,7 @@ def check_or_confirm_overwrite(fname):
 
 
 def process(args):
-    library = KeyLibrary(args.key_directory)
+    library = KeyLibrary(args.key_directory, verbose=args.verbose)
     library.scan()
     with open(args.config_file) as fd:
         config = SedgeConfig(library, fd)
@@ -59,6 +59,8 @@ def main():
         '-k', '--key_directory',
         default=os.path.expanduser('~/.ssh'),
         type=str)
+    parser.add_argument(
+        '-v', '--verbose', action='store_true')
     parser.add_argument(
         'config_file',
         default=os.path.expanduser('~/.sedge/config'),

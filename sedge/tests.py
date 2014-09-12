@@ -1,5 +1,5 @@
 from io import StringIO
-from .parser import SedgeConfig
+from .engine import SedgeConfig
 from .keylib import KeyLibrary
 from nose.tools import eq_
 

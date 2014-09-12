@@ -46,8 +46,8 @@ class Section:
         lines = self.lines.copy()
         visited_set.add(self)
         for identity in self.identities:
-            lines += ['IdentitiesOnly']
-            lines += ['IdentityFile', pipes.quote(config_access.get_keyfile(identity))]
+            lines.append(('IdentitiesOnly', []))
+            lines.append(('IdentityFile', [pipes.quote(config_access.get_keyfile(identity))]))
         for section_name in self.types:
             section = config_access.get_section(section_name)
             lines += section.get_lines(config_access, visited_set)

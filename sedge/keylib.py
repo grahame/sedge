@@ -7,6 +7,10 @@ class KeyNotFound(Exception):
     pass
 
 
+class FingerprintDoesNotParse(Exception):
+    pass
+
+
 class KeyLibrary:
     def __init__(self, path):
         self._path = path
@@ -28,9 +32,22 @@ class KeyLibrary:
         print("Generated public key successfully.", file=sys.stderr)
         return True
 
+    @classmethod
+    def _fingerprint_from_keyinfo(cls, output):
+        parts = [s for s in (t.strip() for t in output.split(' ')) if s]
+        if len(parts) != 4:
+            raise FingerprintDoesNotParse()
+            raise 
+        return parts[1]
+
     def _scan_key(self, fname, recurse=False):
         try:
-            output = subprocess.check_output(['ssh-keygen', '-l', '-f', fname])
+            output = subprocess.check_output(['ssh-keygen', '-l', '-f', fname]).decode('utf8')
+            try:
+                return KeyLibrary._fingerprint_from_keyinfo(output)
+            except FingerprintDoesNotParse:
+                print("public key fingerprint couldn't be parsed: '%s'" % fname, file=sys.stderr)
+                print(output, file=sys.stderr)
         except subprocess.CalledProcessError:
             if not recurse and self._generate_public_key(fname):
                 return self._scan_key(fname, recurse=True)
@@ -43,7 +60,9 @@ class KeyLibrary:
                     continue
                 if name in skip:
                     continue
-                self._scan_key(path)
+                fingerprint = self._scan_key(path)
+                if fingerprint is not None:
+                    self.keys_by_fingerprint[fingerprint] = path
 
     def lookup(self, fingerprint):
         try:

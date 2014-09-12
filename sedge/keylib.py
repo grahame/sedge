@@ -46,7 +46,7 @@ class KeyLibrary:
             try:
                 return KeyLibrary._fingerprint_from_keyinfo(output)
             except FingerprintDoesNotParse:
-                print("public key fingerprint couldn't be parsed: '%s'" % fname, file=sys.stderr)
+                print("warning: public key fingerprint couldn't be parsed: '%s'" % fname, file=sys.stderr)
                 print(output, file=sys.stderr)
         except subprocess.CalledProcessError:
             if not recurse and self._generate_public_key(fname):

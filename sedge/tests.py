@@ -248,6 +248,7 @@ def test_expand():
 def test_expand_range():
     eq_(['1', '3'], Host.expand_with(['{1..3/2}']))
 
+
 @raises(SecurityException)
 def test_http_disallowed():
     config_for_text("@include http://example.com/thing.sedge")

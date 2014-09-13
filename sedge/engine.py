@@ -11,6 +11,10 @@ class SedgeException(Exception):
     pass
 
 
+class SecurityException(SedgeException):
+    pass
+
+
 class ParserException(SedgeException):
     pass
 
@@ -324,7 +328,7 @@ class SedgeEngine:
                 raise ParserException('usage: @include <https://...>')
             url = parts[0]
             if urllib.parse.urlparse(url).scheme != 'https':
-                raise ParserException('error: @includes may only use https:// URLs')
+                raise SecurityException('error: @includes may only use https:// URLs')
             req = requests.get(url, verify=True)
             subconfig = SedgeEngine(self._key_library, StringIO(req.text), url=url)
             self.includes.append((url, subconfig))
@@ -378,10 +382,6 @@ class SedgeEngine:
         if len(matches) == 0:
             raise ParserException("No such section: %s" % (name))
         return matches[0]
-
-    def _get_fingerprint(self, name):
-        if name not in self.keydefs:
-            raise ParserException("Referenced identity '%s' does not exist." % (name))
 
     def host_stanzas(self):
         for host in self.sections_for_cls(Host):

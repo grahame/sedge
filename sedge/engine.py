@@ -259,12 +259,13 @@ class SedgeEngine:
 
     @classmethod
     def parse_config_line(cls, line):
-        # ... format ``keyword arguments''.  Configuration options may be
-        # separated by whitespace or optional whitespace and exactly one `='; the
-        # latter format is useful to avoid the need to quote whitespace when speci-
-        # fying configuration options using the ssh, scp, and sftp -o option.
-        # Arguments may optionally be enclosed in double quotes (") in order to
-        # represent arguments containing spaces.
+        # from the ssh_config manual page:
+        #  > ... format ``keyword arguments''.  Configuration options may be
+        #  > separated by whitespace or optional whitespace and exactly one `='; the
+        #  > latter format is useful to avoid the need to quote whitespace when speci-
+        #  > fying configuration options using the ssh, scp, and sftp -o option.
+        #  > Arguments may optionally be enclosed in double quotes (") in order to
+        #  > represent arguments containing spaces.
         if '=' in line:
             line_parts = line.strip().split('=', 1)
             return line_parts[0].rstrip(), [line_parts[1].lstrip()]

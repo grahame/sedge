@@ -32,6 +32,9 @@ Example
     # global configuration..
     StrictHostKeyChecking no
 
+    # variables we wish to substitute
+    @set work-username percival
+
     # define a set of host attributes
     @HostAttrs trusted
         ForwardAgent yes
@@ -45,7 +48,7 @@ Example
     Host headnode
         @is slow-network
         HostName headnode.example.com
-        User work-username
+        User <work-username>
 
     # define hosts ceph0, ceph2, .., ceph14
     @with i {0..14/2}
@@ -64,8 +67,10 @@ Example
         User ceph
         IdentifyFile ~/.ssh/ceph-id.rsa
 
-    # pull in a public sedge definition
-    @include https://example.com/user-nodes.sedge
+    # pull in a public sedge definition; pass this definition an argument
+    # in the included file arguments are defined:
+    #   @args username
+    @include https://example.com/user-nodes.sedge <work-username>
 
 License
 -------

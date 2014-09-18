@@ -29,7 +29,6 @@ class Section:
         self.with_exprs = with_exprs
         self.lines = []
         self.types = []
-        self.expansions = []
         self.identities = []
 
     def has_lines(self):
@@ -40,9 +39,6 @@ class Section:
 
     def add_type(self, name):
         self.types.append(name)
-
-    def add_expansion(self, parts):
-        self.expansions.append(parts)
 
     def add_identity(self, name):
         self.identities.append(name)
@@ -76,6 +72,7 @@ class Root(Section):
     def __init__(self):
         super(Root, self).__init__('Root', [])
         self.pending_with = []
+        self.vals = {}
 
     def add_type(self, name):
         raise ParserException('Cannot set an @is type on root scope.')
@@ -90,6 +87,12 @@ class Root(Section):
 
     def has_pending_with(self):
         return len(self.pending_with) > 0
+
+    def set_value(self, key, value):
+        self.vals[key] = value
+
+    def get_variables(self):
+        return self.vals
 
     def output_lines(self):
         for keyword, parts in sorted(self.lines):
@@ -143,24 +146,28 @@ class Host(Section):
                 line = line.replace(subst, value)
             yield line
 
-    def variable_iter(self):
+    def variable_iter(self, base):
         """
         returns iterator over the cross product of the variables
         for thsis stanza
         """
+        base_substs = dict(('<' + t + '>', u) for (t, u) in base.items()    )
         substs = []
         vals = []
         for with_defn in self.with_exprs:
             substs.append('<' + with_defn[0] + '>')
             vals.append(Host.expand_with(with_defn[1:]))
-        return (dict(zip(substs, val_tpl)) for val_tpl in product(*vals))
+        for val_tpl in product(*vals):
+            r = base_substs.copy()
+            r.update(dict(zip(substs, val_tpl)))
+            yield r
 
     def host_stanzas(self, config_access):
         """
         returns a list of host definitions
         """
         defn_lines = self.resolve_defn(config_access)
-        for val_dict in self.variable_iter():
+        for val_dict in self.variable_iter(config_access.get_variables()):
             yield list(self.apply_substitutions(defn_lines, val_dict))
 
 
@@ -184,6 +191,9 @@ class SectionConfigAccess:
             return self._config._key_library.lookup(fingerprint)
         except KeyNotFound:
             raise ParserException("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
+
+    def get_variables(self):
+        return self._config.sections[0].get_variables()
 
 
 class ConfigOutput:
@@ -305,6 +315,12 @@ class SedgeEngine:
                 root.add_pending_with(parts)
                 return True
 
+        def handle_set_value(section, parts):
+            if len(parts) != 2:
+                raise ParserException('usage: @set <key> <value>')
+            root = self.sections[0]
+            root.set_value(*parts)
+
         def handle_add_type(section, parts):
             if len(parts) != 1:
                 raise ParserException('usage: @is <HostAttrName>')
@@ -339,9 +355,9 @@ class SedgeEngine:
             name, fingerprint = parts
             self.keydefs[name] = fingerprint
 
-        def handle_expansion(section, keyword, parts):
+        def handle_keyword(section, keyword, parts):
             handlers = {
-                # '@set': handle_set_value,
+                '@set': handle_set_value,
                 '@is': handle_add_type,
                 '@via': handle_via,
                 '@include': handle_include,
@@ -361,7 +377,7 @@ class SedgeEngine:
             if handle_vardef(self.sections[0], keyword, parts):
                 continue
             current_section = self.sections[-1]
-            if handle_expansion(current_section, keyword, parts):
+            if handle_keyword(current_section, keyword, parts):
                 continue
             if keyword.startswith('@'):
                 raise ParserException(

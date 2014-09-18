@@ -253,6 +253,6 @@ def test_expand_range():
 def test_http_disallowed():
     config_for_text("@include http://example.com/thing.sedge")
 
+
 def test_subst():
     check_parse_result('@set goat cheese\n@set username percy\nHost <goat>\nUsername <username>', 'Host = cheese\n    Username = percy\n')
-

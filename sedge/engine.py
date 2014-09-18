@@ -151,7 +151,7 @@ class Host(Section):
         returns iterator over the cross product of the variables
         for thsis stanza
         """
-        base_substs = dict(('<' + t + '>', u) for (t, u) in base.items()    )
+        base_substs = dict(('<' + t + '>', u) for (t, u) in base.items())
         substs = []
         vals = []
         for with_defn in self.with_exprs:

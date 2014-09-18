@@ -84,6 +84,13 @@ def test_include_strips_root():
 ''', 'Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n')
 
 
+def test_include_args():
+    check_parse_result('''
+@set budgerigar percival
+@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/args.sedge <budgerigar>
+''', 'Host = percival\n    HostName = beaking\n')
+
+
 def check_fingerprint(data, fingerprint):
     determined = KeyLibrary._fingerprint_from_keyinfo(data)
     eq_(determined, fingerprint)

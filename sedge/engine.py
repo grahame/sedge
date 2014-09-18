@@ -186,7 +186,7 @@ class SectionConfigAccess:
         try:
             fingerprint = self._config.keydefs[name]
         except KeyError:
-            raise ParserException("identity '%s' is undefined (missing @key definition)" % name)
+            raise ParserException("identity '%s' is not defined (missing @key definition)" % name)
         try:
             return self._config._key_library.lookup(fingerprint)
         except KeyNotFound:
@@ -230,12 +230,15 @@ class SedgeEngine:
     base parser for a sedge configuration file.
     handles all directives and expansions
     """
-    def __init__(self, key_library, fd, url=None):
+    def __init__(self, key_library, fd, url=None, args=None, parent_keydefs=None):
         self._key_library = key_library
         self._url = url
+        self._args = args
         self.sections = [Root()]
         self.includes = []
         self.keydefs = {}
+        if parent_keydefs is not None:
+            self.keydefs.update(parent_keydefs)
         self.parse(fd)
 
     @classmethod
@@ -290,8 +293,22 @@ class SedgeEngine:
                 other = line_parts[1].strip()
             return line_parts[0], SedgeEngine.parse_other_space(other)
 
+    def is_include(self):
+        return self._url is not None
+
     def parse(self, fd):
         "very simple parser - but why would we want it to be complex?"
+
+        def resolve_args(args):
+            # FIXME break this out, it's in common with the templating stuff elsewhere
+            root = self.sections[0]
+            val_dict = dict(('<' + t + '>', u) for (t, u) in root.get_variables().items())
+            resolved_args = []
+            for arg in args:
+                for subst, value in val_dict.items():
+                    arg = arg.replace(subst, value)
+                resolved_args.append(arg)
+            return resolved_args
 
         def handle_section_defn(keyword, parts):
             if keyword == '@HostAttrs':
@@ -315,11 +332,23 @@ class SedgeEngine:
                 root.add_pending_with(parts)
                 return True
 
+        def handle_set_args(section, parts):
+            if len(parts) == 0:
+                raise ParserException('usage: @args arg-name ...')
+            root = self.sections[0]
+            if not self.is_include():
+                return
+            if self._args is None or len(self._args) != len(parts):
+                raise ParserException('required arguments not passed to include %s (%s)' % (self._url, ', '.join(parts)))
+            root = self.sections[0]
+            for key, value in zip(parts, self._args):
+                root.set_value(key, value)
+
         def handle_set_value(section, parts):
             if len(parts) != 2:
                 raise ParserException('usage: @set <key> <value>')
             root = self.sections[0]
-            root.set_value(*parts)
+            root.set_value(*resolve_args(parts))
 
         def handle_add_type(section, parts):
             if len(parts) != 1:
@@ -328,25 +357,30 @@ class SedgeEngine:
 
         def handle_via(section, parts):
             if len(parts) != 1:
-                raise ParserException('usage: @is <Hostname>')
+                raise ParserException('usage: @via <Hostname>')
             section.add_line(
                 'ProxyCommand',
                 ('ssh %s nc %%h %%p 2> /dev/null' %
-                    (pipes.quote(parts[0])),))
+                    (pipes.quote(resolve_args(parts)[0])),))
 
         def handle_identity(section, parts):
             if len(parts) != 1:
                 raise ParserException('usage: @identity <name>')
-            section.add_identity(parts[0])
+            section.add_identity(resolve_args(parts)[0])
 
         def handle_include(section, parts):
-            if len(parts) != 1:
-                raise ParserException('usage: @include <https://...>')
+            if len(parts) == 0:
+                raise ParserException('usage: @include <https://...> [arg ...]')
             url = parts[0]
             if urllib.parse.urlparse(url).scheme != 'https':
                 raise SecurityException('error: @includes may only use https:// URLs')
             req = requests.get(url, verify=True)
-            subconfig = SedgeEngine(self._key_library, StringIO(req.text), url=url)
+            subconfig = SedgeEngine(
+                self._key_library,
+                StringIO(req.text),
+                url=url,
+                args=resolve_args(parts[1:]),
+                parent_keydefs=self.keydefs)
             self.includes.append((url, subconfig))
 
         def handle_keydef(section, parts):
@@ -358,6 +392,7 @@ class SedgeEngine:
         def handle_keyword(section, keyword, parts):
             handlers = {
                 '@set': handle_set_value,
+                '@args': handle_set_args,
                 '@is': handle_add_type,
                 '@via': handle_via,
                 '@include': handle_include,
@@ -404,10 +439,10 @@ class SedgeEngine:
             for stanza in host.host_stanzas(SectionConfigAccess(self)):
                 yield stanza
 
-    def output(self, out, is_include=False):
+    def output(self, out):
         # output global config from root section
         root = self.sections[0]
-        if is_include:
+        if self.is_include():
             if root.has_lines():
                 print("Warning: global config in @include '%s' ignored." % (self._url), file=sys.stderr)
                 print("Ignored lines are:", file=sys.stderr)
@@ -422,4 +457,4 @@ class SedgeEngine:
             out.write_stanza(stanza)
 
         for url, subconfig in self.includes:
-            subconfig.output(out, is_include=True)
+            subconfig.output(out)

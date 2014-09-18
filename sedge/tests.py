@@ -263,3 +263,6 @@ def test_http_disallowed():
 
 def test_subst():
     check_parse_result('@set goat cheese\n@set username percy\nHost <goat>\nUsername <username>', 'Host = cheese\n    Username = percy\n')
+
+def test_subst_with_via():
+    check_parse_result('@set goat cheese\n\nHost test\n@via <goat>', 'Host = test\n    ProxyCommand = ssh cheese nc %h %p 2> /dev/null\n')

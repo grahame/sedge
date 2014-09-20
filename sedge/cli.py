@@ -21,7 +21,11 @@ def check_or_confirm_overwrite(fname):
         with open(fname) as fd:
             header = next(fd)
             if header.find(':sedge:') == -1:
-                return ask_overwrite(fname)
+                okay = ask_overwrite(fname)
+                if okay:
+                    backup_file = fname + '.pre-sedge'
+                    os.rename(fname, backup_file)
+                    print("your previous SSH configuration file has been renamed to:\n%s" % (backup_file), file=sys.stderr)
     except OSError:
         pass
     except StopIteration:

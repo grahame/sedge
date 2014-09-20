@@ -21,10 +21,22 @@ Highlights
 can imported by users.
  - easily define hosts which must be accessed through one or more SSH
  tunnels
- - define variables (including numeric ranges with optional increments, and 
+ - definiton variables (including numeric ranges with optional increments, and 
  sets of valuese)
  - variable expansion within configuration
+ - keys can be referenced by fingerprint, and a specific key used for a given host.
+   The base directory ~/.ssh is scanned for public/private key pairs, and the
+   private key with a matching fingerprint is used. No need to stadardise key 
+   file paths & filenames when sharing configuration.
  - allowing programmatic host definitions (eg. compute0, compute1, ..., compute99)
+
+Security notes
+--------------
+
+Using @include and shared sedge configuration files requires trust. A malicious 
+sedge configuration file can be used to construct an SSH configuration file 
+which does harmful things. Only use @include against trusted URLs under your 
+control, or under the control of someone you trust.
 
 Example
 -------
@@ -35,10 +47,16 @@ Example
     # variables we wish to substitute
     @set work-username percival
 
+    # key fingerprints - sedge will find the matching private key
+    # useful when keys are shared around, and multiple people are 
+    # including a sedge config - no need to standardise paths / names
+    # for the keys
+    @key work-ec2 00:0a:0b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06
+    @key work-storage 3e:1a:1b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06
+
     # define a set of host attributes
     @HostAttrs trusted
         ForwardAgent yes
-        ForwardX11 yes
 
     # ... and another
     @HostAttrs slow-network
@@ -47,6 +65,7 @@ Example
 
     Host headnode
         @is slow-network
+        @identity work-ec2
         HostName headnode.example.com
         User <work-username>
 
@@ -56,16 +75,16 @@ Example
         @is trusted
         # tunnel through 'headnode'
         @via headnode
+        @identity work-storage
         User ceph
-        IdentifyFile ~/.ssh/ceph-id.rsa
 
     @with i 3 5 8
     Host swift<i>
         @is trusted
         # tunnel through 'headnode'
         @via headnode
+        @identity work-storage
         User ceph
-        IdentifyFile ~/.ssh/ceph-id.rsa
 
     # pull in a public sedge definition; pass this definition an argument
     # in the included file arguments are defined:

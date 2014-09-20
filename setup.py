@@ -5,7 +5,7 @@ install_requires = ['requests']
 
 setup(
     name = "sedge",
-    version = "1.0.1",
+    version = "1.1.0",
     packages = find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     extras_require = {
         'dev': dev_requires

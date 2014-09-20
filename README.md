@@ -13,6 +13,11 @@ Build status
 
 [![Build Status](https://travis-ci.org/grahame/sedge.svg?branch=master)](https://travis-ci.org/grahame/sedge)
 
+Installation
+------------
+
+    pip3 install sedge
+
 Highlights
 -----------
 

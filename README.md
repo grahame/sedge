@@ -1,7 +1,7 @@
 sedge
 ------
 
-Template and share OpenSSH ssh\_config(5) files. A pre-processor for 
+Template and share OpenSSH ssh\_config(5) files. A preprocessor for 
 OpenSSH configurations.
 
 Named for the favourite food of the Western Ground Parrot.

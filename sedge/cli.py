@@ -88,18 +88,29 @@ def main():
     parser.add_argument(
         '-k', '--key_directory',
         default=os.path.expanduser('~/.ssh'),
-        type=str)
+        type=str,
+        help='directory to scan for SSH keys')
     parser.add_argument(
-        '-v', '--verbose', action='store_true')
+        '-v', '--verbose',
+        action='store_true',
+        help='verbose output (including key fingerprints)')
     parser.add_argument(
-        'config_file',
+        '--version', action='store_true',
+        help='print version and exit')
+    parser.add_argument(
+        '-c', '--config-file',
         default=os.path.expanduser('~/.sedge/config'),
         nargs='?')
     parser.add_argument(
-        'output_file',
+        '-o', '--output-file',
         default=os.path.expanduser('~/.ssh/config'),
         nargs='?')
     args = parser.parse_args()
+    if args.version:
+        import pkg_resources
+        version = pkg_resources.require("sedge")[0].version
+        print('sedge, version %s' % (version))
+        sys.exit(0)
     try:
         process(args)
     except SedgeException as e:

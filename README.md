@@ -1,7 +1,8 @@
 sedge
 ------
 
-A configuration manager for OpenSSH ssh\_config(5) files.
+Template and share OpenSSH ssh\_config(5) files. A pre-processor for 
+OpenSSH configurations.
 
 Named for the favourite food of the Western Ground Parrot.
 If you find this software useful, please consider 
@@ -43,8 +44,14 @@ sedge configuration file can be used to construct an SSH configuration file
 which does harmful things. Only use @include against trusted URLs under your 
 control, or under the control of someone you trust.
 
-Example
--------
+Getting started
+---------------
+
+Sedge reads `~/.sedge/config` and uses it to generate `~/.ssh/config`.
+
+Below is an example sedge configuration file. It has the same syntax as an 
+OpenSSH configuration file, but uses some additional keywords. Sedge 
+keywords begin with an '@'.
 
     # global configuration..
     StrictHostKeyChecking no
@@ -95,6 +102,49 @@ Example
     # in the included file arguments are defined:
     #   @args username
     @include https://example.com/user-nodes.sedge <work-username>
+
+Keyword documentation
+---------------------
+
+`@args [arg ...]` - this keyword defines the names of variables which must 
+be passed if this file is included from another. Each `arg` will be made 
+available for substitution.
+
+`@identity <keyname>` - this keyword applies to the current Host stanza.
+It requires that only the key `<keyname>` will be offered to log into the 
+host. This is useful if you are using a host such as github which has a 
+common user account, and identifies you based on the key offered.
+
+`@include <url> [arg ...]` - include the sedge file at `<url>`. That file
+may define one or more arguments with `@arg`, which should be passed 
+through as arguments to `@include`.
+
+`@is <attr>` - this keyword applies to a Host stanza. All attributes set 
+within the `@HostAttrs` stanza with name `<attr>` will be applied to the 
+current host.
+
+`@key <name> <fingerprint>` - this keyword applies globally, and the keys you 
+define are made available to files included with `@include`. Your `~/.ssh/` 
+directory will be scanned for keys matching `<fingerprint>`. To find the 
+fingerprint for your keyfiles, run `sedge -v` which will list them.
+
+`@set <variable> <val>` - this keyword applies globally within the current 
+file. The `<variable>` is made available for subsitution within the file.
+
+`@via <host>` - this is a convenience keyword. It expands to a `ProxyCommand`
+directive which allows the SSH login to bounce through `<host>`.
+
+`@with <variable> [val ..]` - this keyword applies to the next Host stanza. 
+The `<variable>` will be made available for subsitution within the stanza, 
+and the stanza will be repeated for each possible value of `<variable>`.
+Values of the format `{a..b}` or `{a..b/c}` are treated specially, and are 
+expanded to the inclusive range of integers from `a` to `b` with optional 
+step `c`. If multiple `@with` keywords are applied to a Host stanza, the 
+product of their values is used for substitution.
+
+
+
+
 
 License
 -------

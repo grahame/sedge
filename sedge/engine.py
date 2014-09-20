@@ -109,7 +109,7 @@ class Host(Section):
     def expand_with_token(cls, s):
         fmt_error = 'range should be format {A..B} or {A..B/C}'
         if not s.startswith('{') or not s.endswith('}'):
-            return s
+            return [s]
         try:
             range_defn = s[1:-1]
             incr = 1
@@ -149,7 +149,7 @@ class Host(Section):
     def variable_iter(self, base):
         """
         returns iterator over the cross product of the variables
-        for thsis stanza
+        for this stanza
         """
         base_substs = dict(('<' + t + '>', u) for (t, u) in base.items())
         substs = []

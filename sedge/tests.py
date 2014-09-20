@@ -36,6 +36,13 @@ Host percival<i>
 ''', 'Host = percival1\n\nHost = percival2\n')
 
 
+def test_expansion_long_strings():
+    check_parse_result('''
+@with i millet corn
+Host percival_<i>
+''', 'Host = percival_millet\n\nHost = percival_corn\n')
+
+
 def test_combinatoric_expansion():
     check_parse_result('''
 @with i 1 2

@@ -121,10 +121,15 @@ class Host(Section):
                 raise ParserException(fmt_error)
             from_val, to_val = (int(t) for t in range_parts)
             to_val += 1  # inclusive end
+            from_width = len('%0s' % range_parts[0])
+            to_width = len('%0s' % range_parts[1])
         except ValueError:
             raise ParserException(
                 'expected an integer in range definition.')
-        return list(str(t) for t in range(from_val, to_val, incr))
+        if from_width == to_width:
+            return ["%0*d" % (to_width, t) for t in range(from_val, to_val, incr)]
+        else:
+            return list(str(t) for t in range(from_val, to_val, incr))
 
     @classmethod
     def expand_with(cls, defn):

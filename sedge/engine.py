@@ -239,7 +239,7 @@ class SedgeEngine:
         self._key_library = key_library
         self._url = url
         self._args = args
-        self._verify = verify_ssl
+        self._verify_ssl = verify_ssl
         self.sections = [Root()]
         self.includes = []
         self.keydefs = {}
@@ -380,11 +380,11 @@ class SedgeEngine:
             url = parts[0]
             if urllib.parse.urlparse(url).scheme != 'https':
                 raise SecurityException('error: @includes may only use https:// URLs')
-            req = requests.get(url, verify=self._verify)
+            req = requests.get(url, verify=self._verify_ssl)
             subconfig = SedgeEngine(
                 self._key_library,
                 StringIO(req.text),
-                self._verify,
+                self._verify_ssl,
                 url=url,
                 args=resolve_args(parts[1:]),
                 parent_keydefs=self.keydefs)

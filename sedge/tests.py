@@ -6,7 +6,8 @@ from nose.tools import eq_, raises
 
 def config_for_text(in_text):
     library = KeyLibrary('/tmp', verbose=False)
-    return SedgeEngine(library, StringIO(in_text))
+    verify_ssl = True
+    return SedgeEngine(library, StringIO(in_text), verify_ssl)
 
 
 def check_parse_result(in_text, expected_text):

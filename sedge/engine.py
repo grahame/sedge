@@ -5,6 +5,7 @@ import sys
 from itertools import product
 from io import StringIO
 from .keylib import KeyNotFound
+from warnings import warn
 
 
 class SedgeException(Exception):
@@ -54,8 +55,9 @@ class Section:
         lines = self.lines.copy()
         visited_set.add(self)
         for identity in self.identities:
-            lines.append(('IdentitiesOnly', ['yes']))
-            lines.append(('IdentityFile', [pipes.quote(config_access.get_keyfile(identity))]))
+            if config_access.get_keyfile(identity):
+                lines.append(('IdentitiesOnly', ['yes']))
+                lines.append(('IdentityFile', [pipes.quote(config_access.get_keyfile(identity))]))
         for section_name in self.types:
             section = config_access.get_section(section_name)
             lines += section.get_lines(config_access, visited_set)
@@ -191,11 +193,13 @@ class SectionConfigAccess:
         try:
             fingerprint = self._config.keydefs[name]
         except KeyError:
-            raise ParserException("identity '%s' is not defined (missing @key definition)" % name)
+            warn("identity '%s' is not defined (missing @key definition)" % name)
+            return None
         try:
             return self._config._key_library.lookup(fingerprint)
         except KeyNotFound:
-            raise ParserException("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
+            warn("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
+            return None
 
     def get_variables(self):
         return self._config.sections[0].get_variables()

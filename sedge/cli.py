@@ -51,7 +51,7 @@ def process(args):
     def write_to(out):
         config.output(out)
     library = KeyLibrary(args.key_directory, verbose=args.verbose)
-    library.scan()
+    library.scan(args.add_keys)
     if args.no_verify:
         verify_ssl = False
     else:
@@ -98,6 +98,10 @@ def main():
         '-v', '--verbose',
         action='store_true',
         help='verbose output (including key fingerprints)')
+    parser.add_argument(
+        '-a', '--add-keys',
+        action='store_true',
+        help='add all scanned keys to agent')
     parser.add_argument(
         '--version', action='store_true',
         help='print version and exit')

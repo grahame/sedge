@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 dev_requires = ['flake8', 'nose']
-install_requires = ['requests']
+install_requires = ['requests>=2.2']
 
 setup(
     author = "Grahame Bowland",

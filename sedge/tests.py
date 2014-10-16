@@ -6,7 +6,8 @@ from nose.tools import eq_, raises
 
 def config_for_text(in_text):
     library = KeyLibrary('/tmp', verbose=False)
-    return SedgeEngine(library, StringIO(in_text))
+    verify_ssl = True
+    return SedgeEngine(library, StringIO(in_text), verify_ssl)
 
 
 def check_parse_result(in_text, expected_text):
@@ -246,8 +247,18 @@ def test_invalid_range_dup_fails():
 
 
 @raises(ParserException)
+def test_invalid_padded_range_dup_fails():
+    Host.expand_with(['{001..002..004}'])
+
+
+@raises(ParserException)
 def test_invalid_range_nonint_fails():
     Host.expand_with(['{1..cat}'])
+
+
+@raises(ParserException)
+def test_invalid_padded_range_nonint_fails():
+    Host.expand_with(['{001..cat}'])
 
 
 @raises(ParserException)
@@ -259,8 +270,16 @@ def test_expand():
     eq_(['1', '2', '3'], Host.expand_with(['{1..3}']))
 
 
+def test_padded_expand():
+    eq_(['001', '002', '003'], Host.expand_with(['{001..003}']))
+
+
 def test_expand_range():
     eq_(['1', '3'], Host.expand_with(['{1..3/2}']))
+
+
+def test_padded_expand_range():
+    eq_(['001', '003'], Host.expand_with(['{001..003/2}']))
 
 
 @raises(SecurityException)

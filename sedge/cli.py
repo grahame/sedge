@@ -51,9 +51,13 @@ def process(args):
     def write_to(out):
         config.output(out)
     library = KeyLibrary(args.key_directory, verbose=args.verbose)
-    library.scan()
+    library.scan(args.add_keys)
+    if args.no_verify:
+        verify_ssl = False
+    else:
+        verify_ssl = True
     with open(args.config_file) as fd:
-        config = SedgeEngine(library, fd)
+        config = SedgeEngine(library, fd, verify_ssl)
     if args.output_file == '-':
         write_to(ConfigOutput(sys.stdout))
         return
@@ -95,6 +99,10 @@ def main():
         action='store_true',
         help='verbose output (including key fingerprints)')
     parser.add_argument(
+        '-a', '--add-keys',
+        action='store_true',
+        help='add all scanned keys to agent')
+    parser.add_argument(
         '--version', action='store_true',
         help='print version and exit')
     parser.add_argument(
@@ -105,6 +113,10 @@ def main():
         '-o', '--output-file',
         default=os.path.expanduser('~/.ssh/config'),
         nargs='?')
+    parser.add_argument(
+        '-n', '--no-verify',
+        action='store_true',
+        help='do not verify SSL')
     args = parser.parse_args()
     if args.version:
         import pkg_resources

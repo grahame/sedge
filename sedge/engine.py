@@ -5,6 +5,7 @@ import sys
 from itertools import product
 from io import StringIO
 from .keylib import KeyNotFound
+from warnings import warn
 
 
 class SedgeException(Exception):
@@ -54,8 +55,9 @@ class Section:
         lines = self.lines.copy()
         visited_set.add(self)
         for identity in self.identities:
-            lines.append(('IdentitiesOnly', ['yes']))
-            lines.append(('IdentityFile', [pipes.quote(config_access.get_keyfile(identity))]))
+            if config_access.get_keyfile(identity):
+                lines.append(('IdentitiesOnly', ['yes']))
+                lines.append(('IdentityFile', [pipes.quote(config_access.get_keyfile(identity))]))
         for section_name in self.types:
             section = config_access.get_section(section_name)
             lines += section.get_lines(config_access, visited_set)
@@ -121,10 +123,15 @@ class Host(Section):
                 raise ParserException(fmt_error)
             from_val, to_val = (int(t) for t in range_parts)
             to_val += 1  # inclusive end
+            from_width = len('%0s' % range_parts[0])
+            to_width = len('%0s' % range_parts[1])
         except ValueError:
             raise ParserException(
                 'expected an integer in range definition.')
-        return list(str(t) for t in range(from_val, to_val, incr))
+        if from_width == to_width:
+            return ["%0*d" % (to_width, t) for t in range(from_val, to_val, incr)]
+        else:
+            return list(str(t) for t in range(from_val, to_val, incr))
 
     @classmethod
     def expand_with(cls, defn):
@@ -186,11 +193,13 @@ class SectionConfigAccess:
         try:
             fingerprint = self._config.keydefs[name]
         except KeyError:
-            raise ParserException("identity '%s' is not defined (missing @key definition)" % name)
+            warn("identity '%s' is not defined (missing @key definition)" % name)
+            return None
         try:
             return self._config._key_library.lookup(fingerprint)
         except KeyNotFound:
-            raise ParserException("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
+            warn("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
+            return None
 
     def get_variables(self):
         return self._config.sections[0].get_variables()
@@ -230,10 +239,11 @@ class SedgeEngine:
     base parser for a sedge configuration file.
     handles all directives and expansions
     """
-    def __init__(self, key_library, fd, url=None, args=None, parent_keydefs=None):
+    def __init__(self, key_library, fd, verify_ssl, url=None, args=None, parent_keydefs=None):
         self._key_library = key_library
         self._url = url
         self._args = args
+        self._verify_ssl = verify_ssl
         self.sections = [Root()]
         self.includes = []
         self.keydefs = {}
@@ -374,10 +384,11 @@ class SedgeEngine:
             url = parts[0]
             if urllib.parse.urlparse(url).scheme != 'https':
                 raise SecurityException('error: @includes may only use https:// URLs')
-            req = requests.get(url, verify=True)
+            req = requests.get(url, verify=self._verify_ssl)
             subconfig = SedgeEngine(
                 self._key_library,
                 StringIO(req.text),
+                self._verify_ssl,
                 url=url,
                 args=resolve_args(parts[1:]),
                 parent_keydefs=self.keydefs)

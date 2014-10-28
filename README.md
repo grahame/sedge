@@ -103,6 +103,12 @@ keywords begin with an '@'.
     #   @args username
     @include https://example.com/user-nodes.sedge <work-username>
 
+    # ... or we can use a file:///path
+    @include file:///path/to/my/file.sedge
+
+    # ... or we can use a path, in which case ~ will be expanded
+    @include ~/mystuff/file.sedge
+
 Keyword documentation
 ---------------------
 

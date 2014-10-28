@@ -2,6 +2,7 @@ import requests
 import urllib
 import pipes
 import sys
+import os
 from itertools import product
 from io import StringIO
 from .keylib import KeyNotFound
@@ -380,14 +381,24 @@ class SedgeEngine:
 
         def handle_include(section, parts):
             if len(parts) == 0:
-                raise ParserException('usage: @include <https://...> [arg ...]')
+                raise ParserException('usage: @include <https://...|/path/to/file.sedge> [arg ...]')
             url = parts[0]
-            if urllib.parse.urlparse(url).scheme != 'https':
-                raise SecurityException('error: @includes may only use https:// URLs')
-            req = requests.get(url, verify=self._verify_ssl)
+            parsed_url = urllib.parse.urlparse(url)
+            if parsed_url.scheme == 'https':
+                req = requests.get(url, verify=self._verify_ssl)
+                text = req.text
+            elif parsed_url.scheme == 'file':
+                with open(parsed_url.path) as fd:
+                    text = fd.read()
+            elif parsed_url.scheme == '':
+                path = os.path.expanduser(url)
+                with open(path) as fd:
+                    text = fd.read()
+            else:
+                raise SecurityException('error: @includes may only use paths or https:// or file:// URLs')
             subconfig = SedgeEngine(
                 self._key_library,
-                StringIO(req.text),
+                StringIO(text),
                 self._verify_ssl,
                 url=url,
                 args=resolve_args(parts[1:]),

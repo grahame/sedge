@@ -1,3 +1,4 @@
+import os
 from io import StringIO
 from .engine import SedgeEngine, Host, ConfigOutput, ParserException, OutputException, SecurityException
 from .keylib import KeyLibrary
@@ -80,23 +81,38 @@ Host blah
 ''', 'Host = blah\n    ProxyCommand = ssh gateway nc %h %p 2> /dev/null\n')
 
 
-def test_include():
+def test_include_https():
     check_parse_result('''
 @include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/simple.sedge
 ''', 'Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n')
 
 
+def test_include_file():
+    fpath = os.path.join(os.path.dirname(__file__), '../ci_data/simple.sedge')
+    check_parse_result(
+        '@include %s' % (fpath),
+        'Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n')
+
+
+def test_include_file_uri():
+    fpath = os.path.join(os.path.dirname(__file__), '../ci_data/simple.sedge')
+    check_parse_result(
+        '@include file:///%s' % (fpath),
+        'Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n')
+
+
 def test_include_strips_root():
-    check_parse_result('''
-@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/strip_global.sedge
-''', 'Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n')
+    fpath = os.path.join(os.path.dirname(__file__), '../ci_data/strip_global.sedge')
+    check_parse_result(
+        '@include %s' % (fpath),
+        'Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n')
 
 
 def test_include_args():
+    fpath = os.path.join(os.path.dirname(__file__), '../ci_data/args.sedge')
     check_parse_result('''
 @set budgerigar percival
-@include https://raw.githubusercontent.com/grahame/sedge/master/ci_data/args.sedge <budgerigar>
-''', 'Host = percival\n    HostName = beaking\n')
+@include %s <budgerigar>''' % fpath, 'Host = percival\n    HostName = beaking\n')
 
 
 def check_fingerprint(data, fingerprint):

@@ -221,7 +221,8 @@ class ConfigOutput:
 
     @classmethod
     def to_line(cls, keyword, parts, indent=0):
-        add_indent = lambda s: ' ' * indent + s
+        def add_indent(s):
+            return ' ' * indent + s
         if len(parts) == 1:
             return add_indent(' '.join([keyword, '=', parts[0]]))
         out = [keyword]
@@ -346,7 +347,6 @@ class SedgeEngine:
         def handle_set_args(section, parts):
             if len(parts) == 0:
                 raise ParserException('usage: @args arg-name ...')
-            root = self.sections[0]
             if not self.is_include():
                 return
             if self._args is None or len(self._args) != len(parts):

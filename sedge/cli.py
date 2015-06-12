@@ -52,12 +52,8 @@ def process(args):
         config.output(out)
     library = KeyLibrary(args.key_directory, verbose=args.verbose)
     library.scan(args.add_keys)
-    if args.no_verify:
-        verify_ssl = False
-    else:
-        verify_ssl = True
     with open(args.config_file) as fd:
-        config = SedgeEngine(library, fd, verify_ssl)
+        config = SedgeEngine(library, fd, not args.no_verify)
     if args.output_file == '-':
         write_to(ConfigOutput(sys.stdout))
         return

@@ -53,7 +53,7 @@ def process(args):
     library = KeyLibrary(args.key_directory, verbose=args.verbose)
     library.scan(args.add_keys)
     with open(args.config_file) as fd:
-        config = SedgeEngine(library, fd, not args.no_verify)
+        config = SedgeEngine(library, fd, not args.no_verify, url=args.config_file)
     if args.output_file == '-':
         write_to(ConfigOutput(sys.stdout))
         return

@@ -6,7 +6,6 @@ import os
 from itertools import product
 from io import StringIO
 from .keylib import KeyNotFound
-from warnings import warn
 
 
 class SedgeException(Exception):
@@ -194,12 +193,12 @@ class SectionConfigAccess:
         try:
             fingerprint = self._config.keydefs[name]
         except KeyError:
-            warn("identity '%s' is not defined (missing @key definition)" % name)
+            self._config.warn("identity '%s' is not defined (missing @key definition)" % name)
             return None
         try:
             return self._config._key_library.lookup(fingerprint)
         except KeyNotFound:
-            warn("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
+            self._config.warn("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
             return None
 
     def get_variables(self):
@@ -241,17 +240,21 @@ class SedgeEngine:
     base parser for a sedge configuration file.
     handles all directives and expansions
     """
-    def __init__(self, key_library, fd, verify_ssl, url=None, args=None, parent_keydefs=None):
+    def __init__(self, key_library, fd, verify_ssl, url=None, args=None, parent_keydefs=None, via_include=False):
         self._key_library = key_library
         self._url = url
         self._args = args
         self._verify_ssl = verify_ssl
+        self._via_include = via_include
         self.sections = [Root()]
         self.includes = []
         self.keydefs = {}
         if parent_keydefs is not None:
             self.keydefs.update(parent_keydefs)
         self.parse(fd)
+
+    def warn(self, mesg):
+        print("%s: %s" % (self._url, mesg), file=sys.stderr)
 
     @classmethod
     def parse_other_space(cls, other):
@@ -306,7 +309,7 @@ class SedgeEngine:
             return line_parts[0], SedgeEngine.parse_other_space(other)
 
     def is_include(self):
-        return self._url is not None
+        return self._via_include
 
     def parse(self, fd):
         "very simple parser - but why would we want it to be complex?"
@@ -402,7 +405,8 @@ class SedgeEngine:
                 self._verify_ssl,
                 url=url,
                 args=resolve_args(parts[1:]),
-                parent_keydefs=self.keydefs)
+                parent_keydefs=self.keydefs,
+                via_include=True)
             self.includes.append((url, subconfig))
 
         def handle_keydef(section, parts):

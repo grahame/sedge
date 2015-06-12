@@ -47,11 +47,20 @@ def diff_config_changes(before, after):
         print(''.join(diff_lines), file=sys.stderr)
 
 
-def process(args):
+def command_list_keys(args):
+    library = KeyLibrary(args.key_directory)
+    library.list_keys()
+
+
+def command_add_keys(args):
+    library = KeyLibrary(args.key_directory)
+    library.add_keys()
+
+
+def command_update(args):
     def write_to(out):
         config.output(out)
-    library = KeyLibrary(args.key_directory, verbose=args.verbose)
-    library.scan(args.add_keys)
+    library = KeyLibrary(args.key_directory)
     with open(args.config_file) as fd:
         config = SedgeEngine(library, fd, not args.no_verify, url=args.config_file)
     if args.output_file == '-':
@@ -84,6 +93,11 @@ def process(args):
 
 
 def main():
+    commands = {
+        'update': command_update,
+        'list-keys': command_list_keys,
+        'add-keys': command_add_keys,
+    }
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-k', '--key_directory',
@@ -93,11 +107,7 @@ def main():
     parser.add_argument(
         '-v', '--verbose',
         action='store_true',
-        help='verbose output (including key fingerprints)')
-    parser.add_argument(
-        '-a', '--add-keys',
-        action='store_true',
-        help='add all scanned keys to agent')
+        help='verbose output')
     parser.add_argument(
         '--version', action='store_true',
         help='print version and exit')
@@ -112,7 +122,13 @@ def main():
     parser.add_argument(
         '-n', '--no-verify',
         action='store_true',
-        help='do not verify SSL')
+        help='do not verify HTTPS requests')
+    parser.add_argument(
+        'command',
+        help='action to take',
+        nargs='?',
+        default='update',
+        choices=commands.keys())
     args = parser.parse_args()
     if args.version:
         import pkg_resources
@@ -120,6 +136,6 @@ def main():
         print('sedge, version %s' % (version))
         sys.exit(0)
     try:
-        process(args)
+        commands[args.command](args)
     except SedgeException as e:
         print('Error: %s' % (e), file=sys.stderr)

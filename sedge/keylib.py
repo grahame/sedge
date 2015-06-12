@@ -12,10 +12,11 @@ class FingerprintDoesNotParse(Exception):
 
 
 class KeyLibrary:
-    def __init__(self, path, verbose):
+    def __init__(self, path, verbose=False):
         self._path = path
         self._verbose = verbose
         self.keys_by_fingerprint = {}
+        self._scan()
 
     def _generate_public_key(self, fname):
         pkey_fname = fname + '.pub'
@@ -52,7 +53,7 @@ class KeyLibrary:
             if not recurse and self._generate_public_key(fname):
                 return self._scan_key(fname, recurse=True)
 
-    def scan(self, add_keys=False):
+    def _scan(self):
         skip = set(('config', 'known_hosts', 'authorized_keys'))
         for dirpath, dirnames, fnames in os.walk(self._path):
             for name, path in ((t, os.path.join(dirpath, t)) for t in fnames):
@@ -66,9 +67,16 @@ class KeyLibrary:
                 if fingerprint is not None:
                     if self._verbose:
                         print("scanned key '%s' fingerprint '%s'" % (os.path.relpath(path, self._path), fingerprint))
-                    if add_keys:
-                        subprocess.call(['ssh-add', path])
                     self.keys_by_fingerprint[fingerprint] = path
+
+    def list_keys(self):
+        max_finger = max(len(t) for t in self.keys_by_fingerprint)
+        for k, v in sorted(self.keys_by_fingerprint.items(), key=lambda x: x[1]):
+            print("%*s  %s" % (max_finger, k, v))
+
+    def add_keys(self):
+        files = list(sorted(set(self.keys_by_fingerprint.values())))
+        subprocess.call(['ssh-add'] + files)
 
     def lookup(self, fingerprint):
         try:

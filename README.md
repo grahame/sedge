@@ -65,6 +65,9 @@ keywords begin with an '@'.
     # for the keys
     @key work-ec2 00:0a:0b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06
     @key work-storage 3e:1a:1b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06
+    # OpenSSH 6.8 switched over to SHA256 fingerprints; we can provde both so our
+    # sedge configs work on machines with all OpenSSH versions
+    @key work-github 8e:1a:3b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06 SHA256:l3mMings9/oSzgKfGWq8uZE4oB+z8lLNNid/Tv51M
 
     # define a set of host attributes
     @HostAttrs trusted

@@ -191,15 +191,16 @@ class SectionConfigAccess:
 
     def get_keyfile(self, name):
         try:
-            fingerprint = self._config.keydefs[name]
+            fingerprints = self._config.keydefs[name]
         except KeyError:
             self._config.warn("identity '%s' is not defined (missing @key definition)" % name)
             return None
-        try:
-            return self._config._key_library.lookup(fingerprint)
-        except KeyNotFound:
-            self._config.warn("identity '%s' (fingerprint %s) not found in SSH key library" % (name, fingerprint))
-            return None
+        for fingerprint in fingerprints:
+            try:
+                return self._config._key_library.lookup(fingerprint)
+            except KeyNotFound:
+                pass
+        self._config.warn("identity '%s' (fingerprints %s) not found in SSH key library" % (name, '; '.join(fingerprints)))
 
     def get_variables(self):
         return self._config.sections[0].get_variables()
@@ -410,10 +411,11 @@ class SedgeEngine:
             self.includes.append((url, subconfig))
 
         def handle_keydef(section, parts):
-            if len(parts) != 2:
-                raise ParserException('usage: @key <name> <fingerprint>')
-            name, fingerprint = parts
-            self.keydefs[name] = fingerprint
+            if len(parts) < 2:
+                raise ParserException('usage: @key <name> [fingerprint]...')
+            name = parts[0]
+            fingerprints = parts[1:]
+            self.keydefs[name] = fingerprints
 
         def handle_keyword(section, keyword, parts):
             handlers = {

@@ -54,6 +54,8 @@ class KeyLibrary:
                 return self._scan_key(fname, recurse=True)
 
     def _scan(self):
+        def rp(path):
+            return os.path.relpath(path, self._path)
         skip = set(('config', 'known_hosts', 'authorized_keys'))
         for dirpath, dirnames, fnames in os.walk(self._path):
             for name, path in ((t, os.path.join(dirpath, t)) for t in fnames):
@@ -66,8 +68,11 @@ class KeyLibrary:
                 fingerprint = self._scan_key(path)
                 if fingerprint is not None:
                     if self._verbose:
-                        print("scanned key '%s' fingerprint '%s'" % (os.path.relpath(path, self._path), fingerprint))
-                    self.keys_by_fingerprint[fingerprint] = path
+                        print("scanned key '%s' fingerprint '%s'" % (rp(path, self._path), fingerprint))
+                    if fingerprint in self.keys_by_fingerprint:
+                        print("warning: key '%s' has same fingerprint as '%s', ignoring duplicate key." % (rp(self.keys_by_fingerprint[fingerprint]), rp(path)))
+                    else:
+                        self.keys_by_fingerprint[fingerprint] = path
 
     def list_keys(self):
         max_finger = max(len(t) for t in self.keys_by_fingerprint)

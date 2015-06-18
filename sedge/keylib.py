@@ -56,7 +56,7 @@ class KeyLibrary:
     def _scan(self):
         def rp(path):
             return os.path.relpath(path, self._path)
-        skip = set(('config', 'known_hosts', 'authorized_keys'))
+        skip = set(('config', 'known_hosts', 'known_hosts.old', 'authorized_keys'))
         for dirpath, dirnames, fnames in os.walk(self._path):
             for name, path in ((t, os.path.join(dirpath, t)) for t in fnames):
                 if name.startswith('.'):

@@ -142,7 +142,9 @@ class Host(Section):
 
     def resolve_defn(self, config_access):
         visited = set()
-        lines = [ConfigOutput.to_line('Host', [self.name])]
+        # we shove the name in here, then on the other end of the substitution
+        # logic we can get it back out. FIXME clean this up.
+        lines = [self.name]
         for keyword, parts in self.get_lines(config_access, visited):
             lines.append(ConfigOutput.to_line(keyword, parts, indent=4))
         return lines
@@ -175,7 +177,10 @@ class Host(Section):
         """
         defn_lines = self.resolve_defn(config_access)
         for val_dict in self.variable_iter(config_access.get_variables()):
-            yield list(self.apply_substitutions(defn_lines, val_dict))
+            subst = list(self.apply_substitutions(defn_lines, val_dict))
+            host = subst[0]
+            lines = [ConfigOutput.to_line('Host', [host])] + subst[1:]
+            yield host, lines
 
 
 class SectionConfigAccess:
@@ -464,10 +469,10 @@ class SedgeEngine:
 
     def host_stanzas(self):
         for host in self.sections_for_cls(Host):
-            for stanza in host.host_stanzas(SectionConfigAccess(self)):
-                yield stanza
+            for tpl in host.host_stanzas(SectionConfigAccess(self)):
+                yield tpl
 
-    def output(self, out):
+    def output(self, out, written_hosts=None):
         # output global config from root section
         root = self.sections[0]
         if self.is_include():
@@ -481,8 +486,25 @@ class SedgeEngine:
         else:
             out.write_stanza(root.output_lines())
 
-        for stanza in self.host_stanzas():
+        if written_hosts is None:
+            written_hosts = set()
+
+        dupes = set()
+        for hostname, stanza in self.host_stanzas():
+            if hostname in written_hosts:
+                dupes.add(hostname)
+            written_hosts.add(hostname)
             out.write_stanza(stanza)
+        if dupes:
+            print("Warning: duplicated hosts parsing '%s'" % (self._url), file=sys.stderr)
+            print("  %s" % (', '.join(sorted(dupes))), file=sys.stderr)
 
         for url, subconfig in self.includes:
-            subconfig.output(out)
+            subconfig.output(out, written_hosts)
+
+        # write out a list of hosts for completion use
+        if not self.is_include():
+            outf = os.path.expanduser("~/.sedge/hosts")
+            with open(outf, 'w') as fd:
+                for host in sorted(written_hosts):
+                    print(host, file=fd)

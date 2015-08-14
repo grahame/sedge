@@ -505,6 +505,9 @@ class SedgeEngine:
         # write out a list of hosts for completion use
         if not self.is_include():
             outf = os.path.expanduser("~/.sedge/hosts")
-            with open(outf, 'w') as fd:
-                for host in sorted(written_hosts):
-                    print(host, file=fd)
+            try:
+                with open(outf, 'w') as fd:
+                    for host in sorted(written_hosts):
+                        print(host, file=fd)
+            except IOError:
+                print("warning: ~/.sedge/hosts could not be written.", file=sys.stderr)

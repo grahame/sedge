@@ -472,7 +472,7 @@ class SedgeEngine:
             for tpl in host.host_stanzas(SectionConfigAccess(self)):
                 yield tpl
 
-    def output(self, out, written_hosts=None):
+    def output(self, out, stanza_names=None):
         # output global config from root section
         root = self.sections[0]
         if self.is_include():
@@ -486,28 +486,31 @@ class SedgeEngine:
         else:
             out.write_stanza(root.output_lines())
 
-        if written_hosts is None:
-            written_hosts = set()
+        if stanza_names is None:
+            stanza_names = set()
 
         dupes = set()
         for hostname, stanza in self.host_stanzas():
-            if hostname in written_hosts:
+            if hostname in stanza_names:
                 dupes.add(hostname)
-            written_hosts.add(hostname)
+            stanza_names.add(hostname)
             out.write_stanza(stanza)
         if dupes:
             print("Warning: duplicated hosts parsing '%s'" % (self._url), file=sys.stderr)
             print("  %s" % (', '.join(sorted(dupes))), file=sys.stderr)
 
         for url, subconfig in self.includes:
-            subconfig.output(out, written_hosts)
+            subconfig.output(out, stanza_names)
 
         # write out a list of hosts for completion use
         if not self.is_include():
             outf = os.path.expanduser("~/.sedge/hosts")
+            pattern_characters = (',', '!', '*', '?')
             try:
                 with open(outf, 'w') as fd:
-                    for host in sorted(written_hosts):
+                    for host in sorted(stanza_names):
+                        if any(host.find(c) != -1 for c in pattern_characters):
+                            continue
                         print(host, file=fd)
             except IOError:
                 print("warning: ~/.sedge/hosts could not be written.", file=sys.stderr)

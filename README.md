@@ -51,7 +51,7 @@ Sedge reads `~/.sedge/config` and uses it to generate `~/.ssh/config`.
 
 Basic usage is simple:
 
-    $ sedge
+    $ sedge update
 
 No output is generated if all goes well. Use the `-v` flag to get
 verbose output, including a diff of any changes made to your `~/.ssh/config`.

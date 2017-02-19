@@ -23,7 +23,7 @@ class KeyLibrary:
         if os.access(pkey_fname, os.R_OK):
             return
         print("public key does not exist for private key '%s'" % fname, file=sys.stderr)
-        print("attemping to generate; you may be prompted for a passphrase.", file=sys.stderr)
+        print("attempting to generate; you may be prompted for a passphrase.", file=sys.stderr)
         try:
             public_key = subprocess.check_output(['ssh-keygen', '-y', '-f', fname])
         except subprocess.CalledProcessError:
@@ -38,7 +38,6 @@ class KeyLibrary:
         parts = [s for s in (t.strip() for t in output.split(' ')) if s]
         if len(parts) != 4:
             raise FingerprintDoesNotParse()
-            raise
         return parts[1]
 
     def _scan_key(self, fname, recurse=False):

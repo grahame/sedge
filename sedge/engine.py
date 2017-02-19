@@ -1,10 +1,12 @@
-import requests
-import urllib
+import os
 import pipes
 import sys
-import os
-from itertools import product
+import urllib
 from io import StringIO
+from itertools import product
+
+import requests
+
 from .keylib import KeyNotFound
 
 
@@ -188,6 +190,7 @@ class SectionConfigAccess:
     sections may require access to other parts of the file.
     this class provides that access.
     """
+
     def __init__(self, config):
         self._config = config
 
@@ -205,7 +208,8 @@ class SectionConfigAccess:
                 return self._config._key_library.lookup(fingerprint)
             except KeyNotFound:
                 pass
-        self._config.warn("identity '%s' (fingerprints %s) not found in SSH key library" % (name, '; '.join(fingerprints)))
+        self._config.warn(
+            "identity '%s' (fingerprints %s) not found in SSH key library" % (name, '; '.join(fingerprints)))
 
     def get_variables(self):
         return self._config.sections[0].get_variables()
@@ -228,6 +232,7 @@ class ConfigOutput:
     def to_line(cls, keyword, parts, indent=0):
         def add_indent(s):
             return ' ' * indent + s
+
         if len(parts) == 1:
             return add_indent(' '.join([keyword, '=', parts[0]]))
         out = [keyword]
@@ -246,6 +251,7 @@ class SedgeEngine:
     base parser for a sedge configuration file.
     handles all directives and expansions
     """
+
     def __init__(self, key_library, fd, verify_ssl, url=None, args=None, parent_keydefs=None, via_include=False):
         self._key_library = key_library
         self._url = url
@@ -273,6 +279,7 @@ class SedgeEngine:
             if val:
                 args.append(val)
             current.clear()
+
         for c in other:
             if in_quote:
                 if c == '"':
@@ -318,7 +325,7 @@ class SedgeEngine:
         return self._via_include
 
     def parse(self, fd):
-        "very simple parser - but why would we want it to be complex?"
+        """very simple parser - but why would we want it to be complex?"""
 
         def resolve_args(args):
             # FIXME break this out, it's in common with the templating stuff elsewhere
@@ -334,18 +341,15 @@ class SedgeEngine:
         def handle_section_defn(keyword, parts):
             if keyword == '@HostAttrs':
                 if len(parts) != 1:
-                    raise ParserException(
-                        'usage: @HostAttrs <hostname>')
+                    raise ParserException('usage: @HostAttrs <hostname>')
                 if self.sections[0].has_pending_with():
-                    raise ParserException(
-                        '@with not supported with @HostAttrs')
+                    raise ParserException('@with not supported with @HostAttrs')
                 self.sections.append(HostAttrs(parts[0]))
                 return True
             if keyword == 'Host':
                 if len(parts) != 1:
                     raise ParserException('usage: Host <hostname>')
-                self.sections.append(
-                    Host(parts[0], self.sections[0].pop_pending_with()))
+                self.sections.append(Host(parts[0], self.sections[0].pop_pending_with()))
                 return True
 
         def handle_vardef(root, keyword, parts):
@@ -359,7 +363,8 @@ class SedgeEngine:
             if not self.is_include():
                 return
             if self._args is None or len(self._args) != len(parts):
-                raise ParserException('required arguments not passed to include %s (%s)' % (self._url, ', '.join(parts)))
+                raise ParserException(
+                    'required arguments not passed to include %s (%s)' % (self._url, ', '.join(parts)))
             root = self.sections[0]
             for key, value in zip(parts, self._args):
                 root.set_value(key, value)
@@ -381,7 +386,7 @@ class SedgeEngine:
             section.add_line(
                 'ProxyCommand',
                 ('ssh %s nc %%h %%p 2> /dev/null' %
-                    (pipes.quote(resolve_args(parts)[0])),))
+                 (pipes.quote(resolve_args(parts)[0])),))
 
         def handle_identity(section, parts):
             if len(parts) != 1:

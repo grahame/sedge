@@ -22,18 +22,18 @@ Installation
 Highlights
 -----------
 
- - define classes of hosts, with inheritance
- - per-site definitions describing the hosts in a site. These definitions
-can imported by users.
- - easily define hosts which must be accessed through one or more SSH
+ - Define classes of hosts, with inheritance
+ - Per-site definitions describing the hosts in a site. These definitions
+can imported by users
+ - Easily define hosts which must be accessed through one or more SSH
  tunnels
- - definiton variables (including numeric ranges with optional increments, and
- sets of valuese)
+ - Definition variables (including numeric ranges with optional increments, and
+ sets of values)
  - variable expansion within configuration
  - keys can be referenced by fingerprint, and a specific key used for a given host.
    The base directory ~/.ssh is scanned for public/private key pairs, and the
-   private key with a matching fingerprint is used. No need to stadardise key
-   file paths & filenames when sharing configuration.
+   private key with a matching fingerprint is used. No need to standardise key
+   file paths & file names when sharing configuration.
  - allowing programmatic host definitions (eg. compute0, compute1, ..., compute99)
 
 Security notes
@@ -72,7 +72,7 @@ keywords begin with an '@'.
     # for the keys
     @key work-ec2 00:0a:0b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06
     @key work-storage 3e:1a:1b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06
-    # OpenSSH 6.8 switched over to SHA256 fingerprints; we can provde both so our
+    # OpenSSH 6.8 switched over to SHA256 fingerprints; we can provide both so our
     # sedge configs work on machines with all OpenSSH versions
     @key work-github 8e:1a:3b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06 SHA256:l3mMings9/oSzgKfGWq8uZE4oB+z8lLNNid/Tv51M
 

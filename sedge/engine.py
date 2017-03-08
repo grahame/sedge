@@ -66,7 +66,7 @@ class Section:
         return lines
 
     def __repr__(self):
-        s = "%s:%s" % (type(self).__name__, self.name)
+        s = "{_type}:{name}".format(_type=type(self).__name__, name=self.name)
         if self.with_exprs:
             s += '[' + ','.join(' '.join(t) for t in self.with_exprs) + ']'
         return '<%s>' % s
@@ -128,8 +128,7 @@ class Host(Section):
             from_width = len('%0s' % range_parts[0])
             to_width = len('%0s' % range_parts[1])
         except ValueError:
-            raise ParserException(
-                'expected an integer in range definition.')
+            raise ParserException('expected an integer in range definition.')
         if from_width == to_width:
             return ["%0*d" % (to_width, t) for t in range(from_val, to_val, incr)]
         else:
@@ -201,15 +200,17 @@ class SectionConfigAccess:
         try:
             fingerprints = self._config.keydefs[name]
         except KeyError:
-            self._config.warn("identity '%s' is not defined (missing @key definition)" % name)
+            self._config.warn("identity '{}' is not defined (missing @key definition)".format(name))
             return None
         for fingerprint in fingerprints:
             try:
                 return self._config._key_library.lookup(fingerprint)
             except KeyNotFound:
                 pass
-        self._config.warn(
-            "identity '%s' (fingerprints %s) not found in SSH key library" % (name, '; '.join(fingerprints)))
+        self._config.warn("identity '{name}' (fingerprints {fingerprints}) not found in SSH key library".format(
+            name=name,
+            fingerprints='; '.join(fingerprints))
+        )
 
     def get_variables(self):
         return self._config.sections[0].get_variables()
@@ -240,7 +241,7 @@ class ConfigOutput:
             if '"' in part:
                 raise OutputException("quotation marks may not be used in arguments")
             if ' ' in part:
-                out.append('"%s"' % part)
+                out.append("{}".format(part))
             else:
                 out.append(part)
         return add_indent(' '.join(out))
@@ -265,8 +266,8 @@ class SedgeEngine:
             self.keydefs.update(parent_keydefs)
         self.parse(fd)
 
-    def warn(self, mesg):
-        print("%s: %s" % (self._url, mesg), file=sys.stderr)
+    def warn(self, message):
+        print("{url}: {msg}".format(url=self._url, msg=message), file=sys.stderr)
 
     @classmethod
     def parse_other_space(cls, other):
@@ -302,15 +303,15 @@ class SedgeEngine:
         pop_current()
         return args
 
+    # from the ssh_config manual page:
+    #  > ... format ``keyword arguments''.  Configuration options may be
+    #  > separated by whitespace or optional whitespace and exactly one `='; the
+    #  > latter format is useful to avoid the need to quote whitespace when speci-
+    #  > fying configuration options using the ssh, scp, and sftp -o option.
+    #  > Arguments may optionally be enclosed in double quotes (") in order to
+    #  > represent arguments containing spaces.
     @classmethod
     def parse_config_line(cls, line):
-        # from the ssh_config manual page:
-        #  > ... format ``keyword arguments''.  Configuration options may be
-        #  > separated by whitespace or optional whitespace and exactly one `='; the
-        #  > latter format is useful to avoid the need to quote whitespace when speci-
-        #  > fying configuration options using the ssh, scp, and sftp -o option.
-        #  > Arguments may optionally be enclosed in double quotes (") in order to
-        #  > represent arguments containing spaces.
         if '=' in line:
             line_parts = line.strip().split('=', 1)
             return line_parts[0].rstrip(), [line_parts[1].lstrip()]
@@ -357,19 +358,21 @@ class SedgeEngine:
                 root.add_pending_with(parts)
                 return True
 
-        def handle_set_args(section, parts):
+        def handle_set_args(_, parts):
             if len(parts) == 0:
                 raise ParserException('usage: @args arg-name ...')
             if not self.is_include():
                 return
             if self._args is None or len(self._args) != len(parts):
-                raise ParserException(
-                    'required arguments not passed to include %s (%s)' % (self._url, ', '.join(parts)))
+                raise ParserException('required arguments not passed to include {url} ({parts})'.format(
+                    url=self._url,
+                    parts=', '.join(parts))
+                )
             root = self.sections[0]
             for key, value in zip(parts, self._args):
                 root.set_value(key, value)
 
-        def handle_set_value(section, parts):
+        def handle_set_value(_, parts):
             if len(parts) != 2:
                 raise ParserException('usage: @set <key> <value>')
             root = self.sections[0]
@@ -385,15 +388,15 @@ class SedgeEngine:
                 raise ParserException('usage: @via <Hostname>')
             section.add_line(
                 'ProxyCommand',
-                ('ssh %s nc %%h %%p 2> /dev/null' %
-                 (pipes.quote(resolve_args(parts)[0])),))
+                ('ssh {args} nc %h %p 2> /dev/null'.format(args=pipes.quote(resolve_args(parts)[0])), )
+            )
 
         def handle_identity(section, parts):
             if len(parts) != 1:
                 raise ParserException('usage: @identity <name>')
             section.add_identity(resolve_args(parts)[0])
 
-        def handle_include(section, parts):
+        def handle_include(_, parts):
             if len(parts) == 0:
                 raise ParserException('usage: @include <https://...|/path/to/file.sedge> [arg ...]')
             url = parts[0]
@@ -410,6 +413,7 @@ class SedgeEngine:
                     text = fd.read()
             else:
                 raise SecurityException('error: @includes may only use paths or https:// or file:// URLs')
+
             subconfig = SedgeEngine(
                 self._key_library,
                 StringIO(text),
@@ -420,7 +424,7 @@ class SedgeEngine:
                 via_include=True)
             self.includes.append((url, subconfig))
 
-        def handle_keydef(section, parts):
+        def handle_keydef(_, parts):
             if len(parts) < 2:
                 raise ParserException('usage: @key <name> [fingerprint]...')
             name = parts[0]
@@ -453,8 +457,7 @@ class SedgeEngine:
             if handle_keyword(current_section, keyword, parts):
                 continue
             if keyword.startswith('@'):
-                raise ParserException(
-                    "unknown expansion keyword '%s'" % (keyword))
+                raise ParserException("unknown expansion keyword {}".format(keyword))
             # use other rather than parts to avoid messing up user
             # whitespace; we don't handle quotes in here as we don't
             # need to
@@ -466,10 +469,9 @@ class SedgeEngine:
     def _get_section_by_name(self, name):
         matches = [t for t in self.sections if t.name == name]
         if len(matches) > 1:
-            raise ParserException(
-                "More than one section with name '%s'" % (name))
+            raise ParserException("More than one section with name '{}'".format(name))
         if len(matches) == 0:
-            raise ParserException("No such section: %s" % (name))
+            raise ParserException("No such section: {}".format(name))
         return matches[0]
 
     def host_stanzas(self):
@@ -482,7 +484,7 @@ class SedgeEngine:
         root = self.sections[0]
         if self.is_include():
             if root.has_lines():
-                print("Warning: global config in @include '%s' ignored." % (self._url), file=sys.stderr)
+                print("Warning: global config in @include '{url}' ignored.".format(url=self._url), file=sys.stderr)
                 print("Ignored lines are:", file=sys.stderr)
                 warning_fd = StringIO()
                 warning_out = ConfigOutput(warning_fd)
@@ -501,7 +503,7 @@ class SedgeEngine:
             stanza_names.add(hostname)
             out.write_stanza(stanza)
         if dupes:
-            print("Warning: duplicated hosts parsing '%s'" % (self._url), file=sys.stderr)
+            print("Warning: duplicated hosts parsing '{url}'".format(url=self._url), file=sys.stderr)
             print("  %s" % (', '.join(sorted(dupes))), file=sys.stderr)
 
         for url, subconfig in self.includes:

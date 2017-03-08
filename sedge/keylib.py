@@ -1,6 +1,6 @@
+import os
 import subprocess
 import sys
-import os
 
 
 class KeyNotFound(Exception):
@@ -13,6 +13,7 @@ class FingerprintDoesNotParse(Exception):
 
 class KeyLibrary:
     def __init__(self, path, verbose=False):
+
         self._path = path
         self._verbose = verbose
         self.keys_by_fingerprint = {}
@@ -22,8 +23,8 @@ class KeyLibrary:
         pkey_fname = fname + '.pub'
         if os.access(pkey_fname, os.R_OK):
             return
-        print("public key does not exist for private key '%s'" % fname, file=sys.stderr)
-        print("attempting to generate; you may be prompted for a passphrase.", file=sys.stderr)
+        print("public key does not exist for private key '{name}'".format(name=fname), file=sys.stderr)
+        print("attempting to generate; you may be prompted for a pass phrase.", file=sys.stderr)
         try:
             public_key = subprocess.check_output(['ssh-keygen', '-y', '-f', fname])
         except subprocess.CalledProcessError:
@@ -55,7 +56,8 @@ class KeyLibrary:
     def _scan(self):
         def rp(path):
             return os.path.relpath(path, self._path)
-        skip = set(('config', 'known_hosts', 'known_hosts.old', 'authorized_keys'))
+
+        skip = {'config', 'known_hosts', 'known_hosts.old', 'authorized_keys'}
         for dirpath, dirnames, fnames in os.walk(self._path):
             for name, path in ((t, os.path.join(dirpath, t)) for t in fnames):
                 if name.startswith('.'):
@@ -67,9 +69,16 @@ class KeyLibrary:
                 fingerprint = self._scan_key(path)
                 if fingerprint is not None:
                     if self._verbose:
-                        print("scanned key '%s' fingerprint '%s'" % (rp(path, self._path), fingerprint))
+                        print("scanned key '{key}' fingerprint '{fingerprint}'".format(
+                            key=rp(path),
+                            fingerprint=fingerprint)
+                        )
                     if fingerprint in self.keys_by_fingerprint:
-                        print("warning: key '%s' has same fingerprint as '%s', ignoring duplicate key." % (rp(self.keys_by_fingerprint[fingerprint]), rp(path)))
+                        print(
+                            "warning: key '{key}' has same fingerprint as '{otherkey}', ignoring duplicate key.".format(
+                                key=rp(self.keys_by_fingerprint[fingerprint]),
+                                otherkey=rp(path))
+                        )
                     else:
                         self.keys_by_fingerprint[fingerprint] = path
 

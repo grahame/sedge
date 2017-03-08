@@ -3,14 +3,16 @@ from setuptools import setup, find_packages
 dev_requires = ['flake8', 'nose']
 install_requires = [
     'requests>=2.2',
-    'click'
+    'click==6.7'
 ]
 
 long_description = """
 Template and share OpenSSH ssh_config(5) files.
 A preprocessor for OpenSSH configurations.
 Named for the favourite food of the Western Ground Parrot.
-If you find this software useful, please consider donating to the effort to save this critically endangered species."
+If you find this software useful, please consider donating to the effort to save this critically endangered species.
+
+http://www.western-ground-parrot.org.au/
 """
 
 setup(

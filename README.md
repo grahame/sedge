@@ -19,6 +19,30 @@ Installation
 
     pip3 install sedge
 
+Usage
+-----
+    sedge
+    Usage: sedge [OPTIONS] COMMAND [ARGS]...
+
+      Template and share OpenSSH ssh_config(5) files. A preprocessor for OpenSSH
+      configurations.
+
+    Options:
+      --version                 Show the version and exit.
+      -c, --config-file TEXT
+      -o, --output-file TEXT
+      -n, --no-verify           do not verify HTTPS requests
+      -k, --key-directory TEXT  directory to scan for SSH keys
+      -v, --verbose
+      --help                    Show this message and exit.
+
+    Commands:
+      init    Initialise ~./sedge/config file if none...
+      keys    Manage ssh keys
+      update  Update ssh config from sedge specification
+
+
+
 Highlights
 -----------
 

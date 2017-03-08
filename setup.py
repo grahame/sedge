@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-dev_requires = ['flake8', 'nose']
+dev_requires = ['flake8', 'nose', 'tox']
 install_requires = [
     'requests>=2.2',
     'click==6.7'
@@ -24,7 +24,7 @@ setup(
     keywords="openssh ssh",
     url="https://github.com/grahame/sedge",
     name="sedge",
-    version="1.6",
+    version="2.0",
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     extras_require={
         'dev': dev_requires
@@ -35,6 +35,6 @@ setup(
             'sedge = sedge.cli:cli',
         ],
     },
-    data_files=[('', ['sedge_template.conf'])],
+    package_data={'sedge': ['sedge_template.conf']},
     include_package_data=True,
 )

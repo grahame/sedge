@@ -23,12 +23,9 @@ Highlights
 -----------
 
  - Define classes of hosts, with inheritance
- - Per-site definitions describing the hosts in a site. These definitions
-can imported by users
- - Easily define hosts which must be accessed through one or more SSH
- tunnels
- - Definition variables (including numeric ranges with optional increments, and
- sets of values)
+ - Per-site definitions describing the hosts in a site. These definitions can imported by users
+ - Easily define hosts which must be accessed through one or more SSH tunnels
+ - Definition variables (including numeric ranges with optional increments, and sets of values)
  - variable expansion within configuration
  - keys can be referenced by fingerprint, and a specific key used for a given host.
    The base directory ~/.ssh is scanned for public/private key pairs, and the

@@ -1,7 +1,10 @@
 import os
 from io import StringIO
-from .engine import SedgeEngine, Host, ConfigOutput, ParserException, OutputException, SecurityException
-from .keylib import KeyLibrary
+
+from .context import sedge
+
+from sedge.engine import SedgeEngine, Host, ConfigOutput, ParserException, OutputException, SecurityException
+from sedge.keylib import KeyLibrary
 from nose.tools import eq_, raises
 
 

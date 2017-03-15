@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
 
-dev_requires = ['flake8', 'nose', 'tox']
+dev_requires = [
+    'flake8',
+    'pytest',
+    'tox'
+]
+
 install_requires = [
-    'requests>=2.2',
-    'click==6.7'
+    'requests',
+    'click'
 ]
 
 long_description = """

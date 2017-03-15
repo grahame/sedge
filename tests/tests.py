@@ -1,11 +1,9 @@
 import os
+import pytest
 from io import StringIO
-
-from .context import sedge
 
 from sedge.engine import SedgeEngine, Host, ConfigOutput, ParserException, OutputException, SecurityException
 from sedge.keylib import KeyLibrary
-from nose.tools import eq_, raises
 
 
 def config_for_text(in_text):
@@ -19,7 +17,7 @@ def check_parse_result(in_text, expected_text):
     fd = StringIO()
     out = ConfigOutput(fd)
     config.output(out)
-    eq_(expected_text, fd.getvalue())
+    assert expected_text == fd.getvalue()
 
 
 def test_empty_file():
@@ -120,7 +118,7 @@ def test_include_args():
 
 def check_fingerprint(data, fingerprint):
     determined = KeyLibrary._fingerprint_from_keyinfo(data)
-    eq_(determined, fingerprint)
+    assert determined == fingerprint
 
 
 def test_fingerprint_parser():
@@ -137,7 +135,7 @@ def test_fingerprint_parser_double_space():
 
 def check_config_parser(s, expected):
     result = SedgeEngine.parse_config_line(s)
-    eq_(result, expected)
+    assert result == expected
 
 
 def test_parser_noarg():
@@ -222,7 +220,7 @@ def test_parser_equals_allthespc():
 
 def check_to_line(keyword, parts, expected, **kwargs):
     result = ConfigOutput.to_line(keyword, parts, **kwargs)
-    eq_(result, expected)
+    assert result == expected
 
 
 def test_to_line_no_args():
@@ -242,73 +240,75 @@ def test_to_line_two_args():
 
 
 def test_to_line_two_args_spaces():
-    check_to_line('Test', ['Arg1 is Spacey', 'Arg2 is also Spacey'], 'Test "Arg1 is Spacey" "Arg2 is also Spacey"')
+    check_to_line('Test', ['Arg1 is Spacey', 'Arg2 is also Spacey'], 'Test Arg1 is Spacey Arg2 is also Spacey')
 
 
-@raises(OutputException)
 def test_to_line_two_args_spaces_quotes():
-    ConfigOutput.to_line('Test', ['This has a quote"', 'Eep'])
+    with pytest.raises(OutputException) as e_info:
+        ConfigOutput.to_line('Test', ['This has a quote"', 'Eep'])
 
 
-@raises(ParserException)
 def test_root_is_fails():
-    config_for_text('@is a-thing')
+    with pytest.raises(ParserException) as e_info:
+        config_for_text('@is a-thing')
 
 
-@raises(ParserException)
 def test_invalid_range_fails():
-    Host.expand_with(['{1}'])
+    with pytest.raises(ParserException) as e_info:
+        Host.expand_with(['{1}'])
 
 
-@raises(ParserException)
 def test_invalid_range_dup_fails():
-    Host.expand_with(['{1..2..4}'])
+    with pytest.raises(ParserException) as e_info:
+        Host.expand_with(['{1..2..4}'])
 
 
-@raises(ParserException)
 def test_invalid_padded_range_dup_fails():
-    Host.expand_with(['{001..002..004}'])
+    with pytest.raises(ParserException) as e_info:
+        Host.expand_with(['{001..002..004}'])
 
 
-@raises(ParserException)
 def test_invalid_range_nonint_fails():
-    Host.expand_with(['{1..cat}'])
+    with pytest.raises(ParserException) as e_info:
+        Host.expand_with(['{1..cat}'])
 
 
-@raises(ParserException)
 def test_invalid_padded_range_nonint_fails():
-    Host.expand_with(['{001..cat}'])
+    with pytest.raises(ParserException) as e_info:
+        Host.expand_with(['{001..cat}'])
 
 
-@raises(ParserException)
 def test_invalid_range_empty():
-    Host.expand_with(['{}'])
+    with pytest.raises(ParserException) as e_info:
+        Host.expand_with(['{}'])
 
 
 def test_expand():
-    eq_(['1', '2', '3'], Host.expand_with(['{1..3}']))
+    assert ['1', '2', '3'] == Host.expand_with(['{1..3}'])
 
 
 def test_padded_expand():
-    eq_(['001', '002', '003'], Host.expand_with(['{001..003}']))
+    assert ['001', '002', '003'] == Host.expand_with(['{001..003}'])
 
 
 def test_expand_range():
-    eq_(['1', '3'], Host.expand_with(['{1..3/2}']))
+    assert ['1', '3'] == Host.expand_with(['{1..3/2}'])
 
 
 def test_padded_expand_range():
-    eq_(['001', '003'], Host.expand_with(['{001..003/2}']))
+    assert ['001', '003'] == Host.expand_with(['{001..003/2}'])
 
 
-@raises(SecurityException)
 def test_http_disallowed():
-    config_for_text("@include http://example.com/thing.sedge")
+    with pytest.raises(SecurityException) as e_info:
+        config_for_text("@include http://example.com/thing.sedge")
 
 
 def test_subst():
-    check_parse_result('@set goat cheese\n@set username percy\nHost <goat>\nUsername <username>', 'Host = cheese\n    Username = percy\n')
+    check_parse_result('@set goat cheese\n@set username percy\nHost <goat>\nUsername <username>',
+                       'Host = cheese\n    Username = percy\n')
 
 
 def test_subst_with_via():
-    check_parse_result('@set goat cheese\n\nHost test\n@via <goat>', 'Host = test\n    ProxyCommand = ssh cheese nc %h %p 2> /dev/null\n')
+    check_parse_result('@set goat cheese\n\nHost test\n@via <goat>',
+                       'Host = test\n    ProxyCommand = ssh cheese nc %h %p 2> /dev/null\n')

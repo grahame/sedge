@@ -2,7 +2,11 @@ import os
 import pytest
 from io import StringIO
 
-from sedge.engine import SedgeEngine, Host, ConfigOutput, ParserException, OutputException, SecurityException
+from sedge.engine import (
+    SedgeEngine, Host, ConfigOutput,
+    ParserException, OutputException, SecurityException
+)
+
 from sedge.keylib import KeyLibrary
 
 

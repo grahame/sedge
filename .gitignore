@@ -7,3 +7,6 @@ __pycache__
 .ropeproject
 build/
 dist/
+.idea/
+.tox
+.cache

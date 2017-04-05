@@ -19,21 +19,42 @@ Installation
 
     pip3 install sedge
 
+Usage
+-----
+    sedge
+    Usage: sedge [OPTIONS] COMMAND [ARGS]...
+
+      Template and share OpenSSH ssh_config(5) files. A preprocessor for OpenSSH
+      configurations.
+
+    Options:
+      --version                 Show the version and exit.
+      -c, --config-file TEXT
+      -o, --output-file TEXT
+      -n, --no-verify           do not verify HTTPS requests
+      -k, --key-directory TEXT  directory to scan for SSH keys
+      -v, --verbose
+      --help                    Show this message and exit.
+
+    Commands:
+      init    Initialise ~./sedge/config file if none...
+      keys    Manage ssh keys
+      update  Update ssh config from sedge specification
+
+
+
 Highlights
 -----------
 
- - define classes of hosts, with inheritance
- - per-site definitions describing the hosts in a site. These definitions
-can imported by users.
- - easily define hosts which must be accessed through one or more SSH
- tunnels
- - definiton variables (including numeric ranges with optional increments, and
- sets of valuese)
+ - Define classes of hosts, with inheritance
+ - Per-site definitions describing the hosts in a site. These definitions can imported by users
+ - Easily define hosts which must be accessed through one or more SSH tunnels
+ - Definition variables (including numeric ranges with optional increments, and sets of values)
  - variable expansion within configuration
  - keys can be referenced by fingerprint, and a specific key used for a given host.
    The base directory ~/.ssh is scanned for public/private key pairs, and the
-   private key with a matching fingerprint is used. No need to stadardise key
-   file paths & filenames when sharing configuration.
+   private key with a matching fingerprint is used. No need to standardise key
+   file paths & file names when sharing configuration.
  - allowing programmatic host definitions (eg. compute0, compute1, ..., compute99)
 
 Security notes
@@ -51,7 +72,7 @@ Sedge reads `~/.sedge/config` and uses it to generate `~/.ssh/config`.
 
 Basic usage is simple:
 
-    $ sedge
+    $ sedge update
 
 No output is generated if all goes well. Use the `-v` flag to get
 verbose output, including a diff of any changes made to your `~/.ssh/config`.
@@ -72,7 +93,7 @@ keywords begin with an '@'.
     # for the keys
     @key work-ec2 00:0a:0b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06
     @key work-storage 3e:1a:1b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06
-    # OpenSSH 6.8 switched over to SHA256 fingerprints; we can provde both so our
+    # OpenSSH 6.8 switched over to SHA256 fingerprints; we can provide both so our
     # sedge configs work on machines with all OpenSSH versions
     @key work-github 8e:1a:3b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06 SHA256:l3mMings9/oSzgKfGWq8uZE4oB+z8lLNNid/Tv51M
 

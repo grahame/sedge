@@ -29,7 +29,7 @@ setup(
     keywords="openssh ssh",
     url="https://github.com/grahame/sedge",
     name="sedge",
-    version="2.0.0",
+    version="2.0.1",
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     extras_require={
         'dev': dev_requires

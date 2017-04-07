@@ -1,4 +1,4 @@
-sedge_config_header = """
+sedge_config_header = """\
 # :sedge:
 #
 # this configuration generated from `sedge' file:

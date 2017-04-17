@@ -8,4 +8,3 @@ sedge_config_header = """\
 #
 
 """
-

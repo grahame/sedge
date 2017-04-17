@@ -71,8 +71,7 @@ def diff_config_changes(before, after):
 
 
 class SedgeConfig:
-    def __init__(self):
-        pass
+    pass
 
 
 sedge_config = click.make_pass_decorator(SedgeConfig, ensure=True)

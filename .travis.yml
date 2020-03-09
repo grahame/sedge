@@ -1,6 +1,6 @@
 sudo: false
 language: python
 python:
-  - "3.6"
+  - "3.8"
 install: pip install tox-travis flake8
 script: tox && flake8 --ignore=E501,E731 sedge

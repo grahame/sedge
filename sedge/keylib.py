@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import sys
 
@@ -12,6 +13,8 @@ class FingerprintDoesNotParse(Exception):
 
 
 class KeyLibrary:
+    fingerprint_re = re.compile(r'^(?P<length>\d+) (?P<fingerprint>[^ ]+) (?P<comment>.*) (?P<algorithm>\(.*\)$)')
+
     def __init__(self, path, verbose=False):
 
         self._path = path
@@ -36,10 +39,10 @@ class KeyLibrary:
 
     @classmethod
     def _fingerprint_from_keyinfo(cls, output):
-        parts = [s for s in (t.strip() for t in output.split(' ')) if s]
-        if len(parts) != 4:
+        m = KeyLibrary.fingerprint_re.match(output)
+        if not m:
             raise FingerprintDoesNotParse()
-        return parts[1]
+        return m.group('fingerprint')
 
     def _scan_key(self, fname, recurse=False):
         try:

@@ -137,6 +137,12 @@ def test_fingerprint_parser_double_space():
         'aa:cb:d2:e2:00:6f:21:b4:fe:39:92:ed:eb:5e:4d:38')
 
 
+def test_fingerprint_parser_no_commentj():
+    check_fingerprint(
+        '2048 SHA256:gUGtJb8Rh0tHHVwTg6chw7LIis7Vx7KBxCBjU1HYehk no comment (RSA)',
+        'SHA256:gUGtJb8Rh0tHHVwTg6chw7LIis7Vx7KBxCBjU1HYehk')
+
+
 def check_config_parser(s, expected):
     result = SedgeEngine.parse_config_line(s)
     assert result == expected

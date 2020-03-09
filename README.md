@@ -200,7 +200,7 @@ product of their values is used for substitution.
 License
 -------
 
-Copyright 2014 [Grahame Bowland](mailto:grahame@angrygoats.net).
+Copyright 2014-2020 [Grahame Bowland](mailto:grahame@oreamnos.com.au).
 See the included file `LICENSE` for copying details.
 
 > This program is free software: you can redistribute it and/or modify

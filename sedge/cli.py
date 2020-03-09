@@ -29,26 +29,33 @@ def backup_file(file_name):
     click.echo('Your previous SSH configuration file has been renamed to: {}'.format(_backup_file), err=True)
 
 
-def check_or_confirm_overwrite(file_name):
+def check_or_confirm_output_overwrite(file_name):
     """
     Returns True if OK to proceed, False otherwise
     """
+
+    def prompt():
+        okay = ask_overwrite(file_name)
+        if okay:
+            backup_file(file_name)
+            return True
+        else:
+            return False
+
     try:
         with open(file_name) as fd:
             header = next(fd)
             if header.find(':sedge:') == -1:
-                okay = ask_overwrite(file_name)
-                if okay:
-                    backup_file(file_name)
-                else:
-                    return False
-
+                return prompt()
+            return True
     except FileNotFoundError:
-        click.echo("{} not found".format(file_name), err=True)
-    except StopIteration as e:
-        click.echo(repr(e), err=True)
-    else:
+        # this is fine: if we simply don't have an existing
+        # configuration, we can proceed to write the new open
+        # over the top
         return True
+    except StopIteration:
+        # probably an empty existing SSH config: prompt
+        return prompt()
 
 
 def diff_config_changes(before, after):
@@ -151,7 +158,14 @@ def update(config):
         write_to(ConfigOutput(sys.stdout))
         return
 
-    if not check_or_confirm_overwrite(config.output_file):
+    # ensure that there is a directory for output
+    config_dir = os.path.dirname(config.output_file)
+    try:
+        os.mkdir(config_dir)
+    except FileExistsError:
+        pass
+
+    if not check_or_confirm_output_overwrite(config.output_file):
         click.echo('Aborting.', err=True)
         sys.exit(1)
 
@@ -163,7 +177,7 @@ def update(config):
         if config.verbose:
             diff_config_changes(config.output_file, tmp_file.name)
         os.rename(tmp_file.name, config.output_file)
-    except:
+    except Exception:
         os.unlink(tmp_file.name)
         raise
 

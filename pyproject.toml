@@ -6,14 +6,8 @@ build-backend = "poetry.masonry.api"
 name = "sedge"
 version = "2.1.0"
 authors = ["Grahame Bowland <grahame@oreamnos.com.au>"]
-description = """
-Template and share OpenSSH ssh_config(5) files.
-A preprocessor for OpenSSH configurations.
-Named for the favourite food of the Western Ground Parrot.
-If you find this software useful, please consider donating to the effort to save this critically endangered species.
-
-http://www.western-ground-parrot.org.au/
-"""
+description = "Template and share OpenSSH ssh_config(5) files."
+readme = "README.md"
 
 [tool.poetry.scripts]
 sedge = 'sedge.cli:cli'

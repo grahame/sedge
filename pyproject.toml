@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "sedge"
+version = "2.1.0"
+authors = ["Grahame Bowland <grahame@oreamnos.com.au>"]
+description = """
+Template and share OpenSSH ssh_config(5) files.
+A preprocessor for OpenSSH configurations.
+Named for the favourite food of the Western Ground Parrot.
+If you find this software useful, please consider donating to the effort to save this critically endangered species.
+
+http://www.western-ground-parrot.org.au/
+"""
+
+[tool.poetry.scripts]
+sedge = 'sedge.cli:cli'
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+click = "^7.1.1"
+requests = "^2.23.0"
+
+pytest = "*"
+[tool.poetry.dev-dependencies]
+black = "^19.10b0"
+tox = "^3.14.6"

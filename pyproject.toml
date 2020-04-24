@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry"]
+build-backend = "poetry.masonry.api"
+
 [tool.poetry]
 name = "sedge"
 version = "2.1.0"
@@ -19,7 +23,17 @@ python = ">=3.7"
 click = "^7.1.1"
 requests = "^2.23.0"
 
-pytest = "*"
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
 tox = "^3.14.6"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py38
+isolated_build = True
+
+[testenv]
+deps=pytest
+commands=pytest
+"""

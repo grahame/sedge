@@ -58,8 +58,10 @@ class Section:
         visited_set.add(self)
         for identity in self.identities:
             if config_access.get_keyfile(identity):
-                lines.append(('IdentitiesOnly', ['yes']))
-                lines.append(('IdentityFile', [pipes.quote(config_access.get_keyfile(identity))]))
+                lines.append(("IdentitiesOnly", ["yes"]))
+                lines.append(
+                    ("IdentityFile", [pipes.quote(config_access.get_keyfile(identity))])
+                )
         for section_name in self.types:
             section = config_access.get_section(section_name)
             lines += section.get_lines(config_access, visited_set)
@@ -68,18 +70,18 @@ class Section:
     def __repr__(self):
         s = "{_type}:{name}".format(_type=type(self).__name__, name=self.name)
         if self.with_exprs:
-            s += '[' + ','.join(' '.join(t) for t in self.with_exprs) + ']'
-        return '<%s>' % s
+            s += "[" + ",".join(" ".join(t) for t in self.with_exprs) + "]"
+        return "<%s>" % s
 
 
 class Root(Section):
     def __init__(self):
-        super(Root, self).__init__('Root', [])
+        super(Root, self).__init__("Root", [])
         self.pending_with = []
         self.vals = {}
 
     def add_type(self, name):
-        raise ParserException('Cannot set an @is type on root scope.')
+        raise ParserException("Cannot set an @is type on root scope.")
 
     def add_pending_with(self, parts):
         self.pending_with.append(parts)
@@ -111,24 +113,24 @@ class HostAttrs(Section):
 class Host(Section):
     @classmethod
     def expand_with_token(cls, s):
-        fmt_error = 'range should be format {A..B} or {A..B/C}'
-        if not s.startswith('{') or not s.endswith('}'):
+        fmt_error = "range should be format {A..B} or {A..B/C}"
+        if not s.startswith("{") or not s.endswith("}"):
             return [s]
         try:
             range_defn = s[1:-1]
             incr = 1
-            if '/' in range_defn:
-                range_defn, incr = range_defn.rsplit('/', 1)
+            if "/" in range_defn:
+                range_defn, incr = range_defn.rsplit("/", 1)
                 incr = int(incr)
-            range_parts = range_defn.split('..')
+            range_parts = range_defn.split("..")
             if len(range_parts) != 2:
                 raise ParserException(fmt_error)
             from_val, to_val = (int(t) for t in range_parts)
             to_val += 1  # inclusive end
-            from_width = len('%0s' % range_parts[0])
-            to_width = len('%0s' % range_parts[1])
+            from_width = len("%0s" % range_parts[0])
+            to_width = len("%0s" % range_parts[1])
         except ValueError:
-            raise ParserException('expected an integer in range definition.')
+            raise ParserException("expected an integer in range definition.")
         if from_width == to_width:
             return ["%0*d" % (to_width, t) for t in range(from_val, to_val, incr)]
         else:
@@ -161,11 +163,11 @@ class Host(Section):
         returns iterator over the cross product of the variables
         for this stanza
         """
-        base_substs = dict(('<' + t + '>', u) for (t, u) in base.items())
+        base_substs = dict(("<" + t + ">", u) for (t, u) in base.items())
         substs = []
         vals = []
         for with_defn in self.with_exprs:
-            substs.append('<' + with_defn[0] + '>')
+            substs.append("<" + with_defn[0] + ">")
             vals.append(Host.expand_with(with_defn[1:]))
         for val_tpl in product(*vals):
             r = base_substs.copy()
@@ -180,7 +182,7 @@ class Host(Section):
         for val_dict in self.variable_iter(config_access.get_variables()):
             subst = list(self.apply_substitutions(defn_lines, val_dict))
             host = subst[0]
-            lines = [ConfigOutput.to_line('Host', [host])] + subst[1:]
+            lines = [ConfigOutput.to_line("Host", [host])] + subst[1:]
             yield host, lines
 
 
@@ -200,16 +202,19 @@ class SectionConfigAccess:
         try:
             fingerprints = self._config.keydefs[name]
         except KeyError:
-            self._config.warn("identity '{}' is not defined (missing @key definition)".format(name))
+            self._config.warn(
+                "identity '{}' is not defined (missing @key definition)".format(name)
+            )
             return None
         for fingerprint in fingerprints:
             try:
                 return self._config._key_library.lookup(fingerprint)
             except KeyNotFound:
                 pass
-        self._config.warn("identity '{name}' (fingerprints {fingerprints}) not found in SSH key library".format(
-            name=name,
-            fingerprints='; '.join(fingerprints))
+        self._config.warn(
+            "identity '{name}' (fingerprints {fingerprints}) not found in SSH key library".format(
+                name=name, fingerprints="; ".join(fingerprints)
+            )
         )
 
     def get_variables(self):
@@ -223,28 +228,28 @@ class ConfigOutput:
 
     def write_stanza(self, it):
         if self.need_break:
-            self._fd.write('\n')
+            self._fd.write("\n")
         for i, line in enumerate(it):
             if i == 0:
                 self.need_break = True
-            self._fd.write(line + '\n')
+            self._fd.write(line + "\n")
 
     @classmethod
     def to_line(cls, keyword, parts, indent=0):
         def add_indent(s):
-            return ' ' * indent + s
+            return " " * indent + s
 
         if len(parts) == 1:
-            return add_indent(' '.join([keyword, '=', parts[0]]))
+            return add_indent(" ".join([keyword, "=", parts[0]]))
         out = [keyword]
         for part in parts:
             if '"' in part:
                 raise OutputException("quotation marks may not be used in arguments")
-            if ' ' in part:
+            if " " in part:
                 out.append("{}".format(part))
             else:
                 out.append(part)
-        return add_indent(' '.join(out))
+        return add_indent(" ".join(out))
 
 
 class SedgeEngine:
@@ -253,7 +258,16 @@ class SedgeEngine:
     handles all directives and expansions
     """
 
-    def __init__(self, key_library, fd, verify_ssl, url=None, args=None, parent_keydefs=None, via_include=False):
+    def __init__(
+        self,
+        key_library,
+        fd,
+        verify_ssl,
+        url=None,
+        args=None,
+        parent_keydefs=None,
+        via_include=False,
+    ):
         self._key_library = key_library
         self._url = url
         self._args = args
@@ -276,7 +290,7 @@ class SedgeEngine:
         current = []
 
         def pop_current():
-            val = ''.join(current)
+            val = "".join(current)
             if val:
                 args.append(val)
             current.clear()
@@ -291,15 +305,17 @@ class SedgeEngine:
             else:
                 if c == '"':
                     if len(current) > 0:
-                        raise ParserException('quotation marks cannot be used within an argument value')
+                        raise ParserException(
+                            "quotation marks cannot be used within an argument value"
+                        )
                     in_quote = True
                 else:
-                    if c == ' ':
+                    if c == " ":
                         pop_current()
                     else:
                         current.append(c)
         if in_quote:
-            raise ParserException('unterminated quotation marks')
+            raise ParserException("unterminated quotation marks")
         pop_current()
         return args
 
@@ -312,12 +328,12 @@ class SedgeEngine:
     #  > represent arguments containing spaces.
     @classmethod
     def parse_config_line(cls, line):
-        if '=' in line:
-            line_parts = line.strip().split('=', 1)
+        if "=" in line:
+            line_parts = line.strip().split("=", 1)
             return line_parts[0].rstrip(), [line_parts[1].lstrip()]
         else:
-            line_parts = line.strip().split(' ', 1)
-            other = ''
+            line_parts = line.strip().split(" ", 1)
+            other = ""
             if len(line_parts) == 2:
                 other = line_parts[1].strip()
             return line_parts[0], SedgeEngine.parse_other_space(other)
@@ -331,7 +347,9 @@ class SedgeEngine:
         def resolve_args(args):
             # FIXME break this out, it's in common with the templating stuff elsewhere
             root = self.sections[0]
-            val_dict = dict(('<' + t + '>', u) for (t, u) in root.get_variables().items())
+            val_dict = dict(
+                ("<" + t + ">", u) for (t, u) in root.get_variables().items()
+            )
             resolved_args = []
             for arg in args:
                 for subst, value in val_dict.items():
@@ -340,33 +358,36 @@ class SedgeEngine:
             return resolved_args
 
         def handle_section_defn(keyword, parts):
-            if keyword == '@HostAttrs':
+            if keyword == "@HostAttrs":
                 if len(parts) != 1:
-                    raise ParserException('usage: @HostAttrs <hostname>')
+                    raise ParserException("usage: @HostAttrs <hostname>")
                 if self.sections[0].has_pending_with():
-                    raise ParserException('@with not supported with @HostAttrs')
+                    raise ParserException("@with not supported with @HostAttrs")
                 self.sections.append(HostAttrs(parts[0]))
                 return True
-            if keyword == 'Host':
+            if keyword == "Host":
                 if len(parts) != 1:
-                    raise ParserException('usage: Host <hostname>')
-                self.sections.append(Host(parts[0], self.sections[0].pop_pending_with()))
+                    raise ParserException("usage: Host <hostname>")
+                self.sections.append(
+                    Host(parts[0], self.sections[0].pop_pending_with())
+                )
                 return True
 
         def handle_vardef(root, keyword, parts):
-            if keyword == '@with':
+            if keyword == "@with":
                 root.add_pending_with(parts)
                 return True
 
         def handle_set_args(_, parts):
             if len(parts) == 0:
-                raise ParserException('usage: @args arg-name ...')
+                raise ParserException("usage: @args arg-name ...")
             if not self.is_include():
                 return
             if self._args is None or len(self._args) != len(parts):
-                raise ParserException('required arguments not passed to include {url} ({parts})'.format(
-                    url=self._url,
-                    parts=', '.join(parts))
+                raise ParserException(
+                    "required arguments not passed to include {url} ({parts})".format(
+                        url=self._url, parts=", ".join(parts)
+                    )
                 )
             root = self.sections[0]
             for key, value in zip(parts, self._args):
@@ -374,45 +395,53 @@ class SedgeEngine:
 
         def handle_set_value(_, parts):
             if len(parts) != 2:
-                raise ParserException('usage: @set <key> <value>')
+                raise ParserException("usage: @set <key> <value>")
             root = self.sections[0]
             root.set_value(*resolve_args(parts))
 
         def handle_add_type(section, parts):
             if len(parts) != 1:
-                raise ParserException('usage: @is <HostAttrName>')
+                raise ParserException("usage: @is <HostAttrName>")
             section.add_type(parts[0])
 
         def handle_via(section, parts):
             if len(parts) != 1:
-                raise ParserException('usage: @via <Hostname>')
+                raise ParserException("usage: @via <Hostname>")
             section.add_line(
-                'ProxyCommand',
-                ('ssh {args} nc %h %p 2> /dev/null'.format(args=pipes.quote(resolve_args(parts)[0])), )
+                "ProxyCommand",
+                (
+                    "ssh {args} nc %h %p 2> /dev/null".format(
+                        args=pipes.quote(resolve_args(parts)[0])
+                    ),
+                ),
             )
 
         def handle_identity(section, parts):
             if len(parts) != 1:
-                raise ParserException('usage: @identity <name>')
+                raise ParserException("usage: @identity <name>")
             section.add_identity(resolve_args(parts)[0])
 
         def handle_include(_, parts):
             if len(parts) == 0:
-                raise ParserException('usage: @include <https://...|/path/to/file.sedge> [arg ...]')
+                raise ParserException(
+                    "usage: @include <https://...|/path/to/file.sedge> [arg ...]"
+                )
             url = parts[0]
             parsed_url = urllib.parse.urlparse(url)
-            if parsed_url.scheme == 'https':
+            if parsed_url.scheme == "https":
                 req = requests.get(url, verify=self._verify_ssl)
                 text = req.text
-            elif parsed_url.scheme == 'file':
+            elif parsed_url.scheme == "file":
                 with open(parsed_url.path) as fd:
                     text = fd.read()
-            elif parsed_url.scheme == '':
+            elif parsed_url.scheme == "":
                 path = os.path.expanduser(url)
                 with open(path) as fd:
                     text = fd.read()
             else:
-                raise SecurityException('error: @includes may only use paths or https:// or file:// URLs')
+                raise SecurityException(
+                    "error: @includes may only use paths or https:// or file:// URLs"
+                )
 
             subconfig = SedgeEngine(
                 self._key_library,
@@ -421,32 +450,33 @@ class SedgeEngine:
                 url=url,
                 args=resolve_args(parts[1:]),
                 parent_keydefs=self.keydefs,
-                via_include=True)
+                via_include=True,
+            )
             self.includes.append((url, subconfig))
 
         def handle_keydef(_, parts):
             if len(parts) < 2:
-                raise ParserException('usage: @key <name> [fingerprint]...')
+                raise ParserException("usage: @key <name> [fingerprint]...")
             name = parts[0]
             fingerprints = parts[1:]
             self.keydefs[name] = fingerprints
 
         def handle_keyword(section, keyword, parts):
             handlers = {
-                '@set': handle_set_value,
-                '@args': handle_set_args,
-                '@is': handle_add_type,
-                '@via': handle_via,
-                '@include': handle_include,
-                '@key': handle_keydef,
-                '@identity': handle_identity
+                "@set": handle_set_value,
+                "@args": handle_set_args,
+                "@is": handle_add_type,
+                "@via": handle_via,
+                "@include": handle_include,
+                "@key": handle_keydef,
+                "@identity": handle_identity,
             }
             if keyword in handlers:
                 handlers[keyword](section, parts)
                 return True
 
         for line in (t.strip() for t in fd):
-            if line.startswith('#') or line == '':
+            if line.startswith("#") or line == "":
                 continue
             keyword, parts = SedgeEngine.parse_config_line(line)
             if handle_section_defn(keyword, parts):
@@ -456,7 +486,7 @@ class SedgeEngine:
             current_section = self.sections[-1]
             if handle_keyword(current_section, keyword, parts):
                 continue
-            if keyword.startswith('@'):
+            if keyword.startswith("@"):
                 raise ParserException("unknown expansion keyword {}".format(keyword))
             # use other rather than parts to avoid messing up user
             # whitespace; we don't handle quotes in here as we don't
@@ -484,12 +514,20 @@ class SedgeEngine:
         root = self.sections[0]
         if self.is_include():
             if root.has_lines():
-                print("Warning: global config in @include '{url}' ignored.".format(url=self._url), file=sys.stderr)
+                print(
+                    "Warning: global config in @include '{url}' ignored.".format(
+                        url=self._url
+                    ),
+                    file=sys.stderr,
+                )
                 print("Ignored lines are:", file=sys.stderr)
                 warning_fd = StringIO()
                 warning_out = ConfigOutput(warning_fd)
                 warning_out.write_stanza(root.output_lines())
-                print("\n".join([" > " + t for t in warning_fd.getvalue().splitlines()]), file=sys.stderr)
+                print(
+                    "\n".join([" > " + t for t in warning_fd.getvalue().splitlines()]),
+                    file=sys.stderr,
+                )
         else:
             out.write_stanza(root.output_lines())
 
@@ -503,8 +541,11 @@ class SedgeEngine:
             stanza_names.add(hostname)
             out.write_stanza(stanza)
         if dupes:
-            print("Warning: duplicated hosts parsing '{url}'".format(url=self._url), file=sys.stderr)
-            print("  %s" % (', '.join(sorted(dupes))), file=sys.stderr)
+            print(
+                "Warning: duplicated hosts parsing '{url}'".format(url=self._url),
+                file=sys.stderr,
+            )
+            print("  %s" % (", ".join(sorted(dupes))), file=sys.stderr)
 
         for url, subconfig in self.includes:
             subconfig.output(out, stanza_names)
@@ -512,9 +553,9 @@ class SedgeEngine:
         # write out a list of hosts for completion use
         if not self.is_include():
             outf = os.path.expanduser("~/.sedge/hosts")
-            pattern_characters = (',', '!', '*', '?')
+            pattern_characters = (",", "!", "*", "?")
             try:
-                with open(outf, 'w') as fd:
+                with open(outf, "w") as fd:
                     for host in sorted(stanza_names):
                         if any(host.find(c) != -1 for c in pattern_characters):
                             continue

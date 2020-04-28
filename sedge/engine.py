@@ -4,6 +4,7 @@ import sys
 import urllib
 from io import StringIO
 from itertools import product
+from pathlib import Path
 
 import requests
 
@@ -428,11 +429,19 @@ class SedgeEngine:
                 req = requests.get(url, verify=self._verify_ssl)
                 text = req.text
             elif parsed_url.scheme == "file":
-                with open(parsed_url.path) as fd:
-                    text = fd.read()
+                try:
+                    with open(parsed_url.path) as fd:
+                        text = fd.read()
+                except OSError:
+                    path = Path(url.replace('file:', '').strip('/'))
+                    with open(str(path)) as fd:
+                        text = fd.read()
             elif parsed_url.scheme == "":
                 path = os.path.expanduser(url)
                 with open(path) as fd:
+                    text = fd.read()
+            elif parsed_url and len(parsed_url.scheme) == 1 and Path(url).exists():
+                with open(url) as fd:
                     text = fd.read()
             else:
                 raise SecurityException(

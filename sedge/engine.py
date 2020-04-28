@@ -408,12 +408,8 @@ class SedgeEngine:
             if len(parts) != 1:
                 raise ParserException("usage: @via <Hostname>")
             section.add_line(
-                "ProxyCommand",
-                (
-                    "ssh {args} nc %h %p 2> /dev/null".format(
-                        args=pipes.quote(resolve_args(parts)[0])
-                    ),
-                ),
+                'ProxyJump',
+                ('{args}'.format(args=pipes.quote(resolve_args(parts)[0])), )
             )
 
         def handle_identity(section, parts):

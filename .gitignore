@@ -10,3 +10,4 @@ dist/
 .idea/
 .tox
 .cache
+.vscode/

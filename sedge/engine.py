@@ -408,8 +408,8 @@ class SedgeEngine:
             if len(parts) != 1:
                 raise ParserException("usage: @via <Hostname>")
             section.add_line(
-                'ProxyJump',
-                ('{args}'.format(args=pipes.quote(resolve_args(parts)[0])), )
+                "ProxyJump",
+                ("{args}".format(args=pipes.quote(resolve_args(parts)[0])),),
             )
 
         def handle_identity(section, parts):

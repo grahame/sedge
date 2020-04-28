@@ -1,29 +1,15 @@
 import os
 import pipes
 import sys
-import urllib
 from io import StringIO
 from itertools import product
 
-import requests
-
 from .keylib import KeyNotFound
-
-
-class SedgeException(Exception):
-    pass
-
-
-class SecurityException(SedgeException):
-    pass
-
-
-class ParserException(SedgeException):
-    pass
-
-
-class OutputException(SedgeException):
-    pass
+from .exceptions import (
+    ParserException,
+    OutputException,
+)
+from .urlhandling import get_contents
 
 
 class Section:
@@ -423,28 +409,13 @@ class SedgeEngine:
                     "usage: @include <https://...|/path/to/file.sedge> [arg ...]"
                 )
             url = parts[0]
-            parsed_url = urllib.parse.urlparse(url)
-            if parsed_url.scheme == "https":
-                req = requests.get(url, verify=self._verify_ssl)
-                text = req.text
-            elif parsed_url.scheme == "file":
-                with open(parsed_url.path) as fd:
-                    text = fd.read()
-            elif parsed_url.scheme == "":
-                path = os.path.expanduser(url)
-                with open(path) as fd:
-                    text = fd.read()
-            else:
-                raise SecurityException(
-                    "error: @includes may only use paths or https:// or file:// URLs"
-                )
-
+            subargs = parts[1:]
             subconfig = SedgeEngine(
                 self._key_library,
-                StringIO(text),
+                StringIO(get_contents(url, self._verify_ssl)),
                 self._verify_ssl,
                 url=url,
-                args=resolve_args(parts[1:]),
+                args=resolve_args(subargs),
                 parent_keydefs=self.keydefs,
                 via_include=True,
             )

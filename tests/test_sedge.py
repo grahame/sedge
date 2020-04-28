@@ -2,13 +2,10 @@ import os
 import pytest
 from io import StringIO
 
-from sedge.engine import (
-    SedgeEngine,
-    Host,
-    ConfigOutput,
+from sedge.engine import SedgeEngine, Host, ConfigOutput
+from sedge.exceptions import (
     ParserException,
     OutputException,
-    SecurityException,
 )
 
 from sedge.keylib import KeyLibrary
@@ -299,42 +296,42 @@ def test_to_line_two_args_spaces():
 
 
 def test_to_line_two_args_spaces_quotes():
-    with pytest.raises(OutputException) as e_info:
+    with pytest.raises(OutputException) as _:
         ConfigOutput.to_line("Test", ['This has a quote"', "Eep"])
 
 
 def test_root_is_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         config_for_text("@is a-thing")
 
 
 def test_invalid_range_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{1}"])
 
 
 def test_invalid_range_dup_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{1..2..4}"])
 
 
 def test_invalid_padded_range_dup_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{001..002..004}"])
 
 
 def test_invalid_range_nonint_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{1..cat}"])
 
 
 def test_invalid_padded_range_nonint_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{001..cat}"])
 
 
 def test_invalid_range_empty():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{}"])
 
 
@@ -355,7 +352,7 @@ def test_padded_expand_range():
 
 
 def test_http_disallowed():
-    with pytest.raises(SecurityException) as e_info:
+    with pytest.raises(FileNotFoundError) as _:
         config_for_text("@include http://example.com/thing.sedge")
 
 

@@ -9,6 +9,8 @@ If you find this software useful, please consider
 [donating to the effort to save](http://www.givenow.com.au/groundparrot)
 this critically endangered species.
 
+sedge is supported on macOS, Linux/BSD, and Windows.
+
 Build status
 ------------
 

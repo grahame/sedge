@@ -412,9 +412,14 @@ class SedgeEngine:
                 )
             url = parts[0]
             subargs = parts[1:]
+            try:
+                contents = get_contents(url, self._verify_ssl)
+            except Exception as e:
+                print("skipping `@import {}': {}".format(" ".join(parts), repr(e)))
+                return
             subconfig = SedgeEngine(
                 self._key_library,
-                StringIO(get_contents(url, self._verify_ssl)),
+                StringIO(contents),
                 self._verify_ssl,
                 url=url,
                 args=resolve_args(subargs),

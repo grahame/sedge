@@ -3,6 +3,7 @@ import pytest
 from io import StringIO
 
 from sedge.engine import SedgeEngine, Host, ConfigOutput
+from sedge.urlhandling import get_contents
 from sedge.exceptions import (
     ParserException,
     OutputException,
@@ -362,7 +363,7 @@ def test_padded_expand_range():
 
 def test_http_disallowed():
     with pytest.raises((FileNotFoundError, OSError)) as _:
-        config_for_text("@include http://example.com/thing.sedge")
+        get_contents("http://example.com/thing.sedge", True)
 
 
 def test_subst():

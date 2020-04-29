@@ -115,35 +115,37 @@ def test_include_https():
 
 
 def test_include_file():
-    fpath = os.path.join(os.path.dirname(__file__), "../ci_data/simple.sedge")
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "simple.sedge")
     check_parse_result(
-        "@include %s" % (fpath),
+        '@include "%s"' % (fpath),
         "Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n",
     )
 
 
 def test_include_file_uri():
-    fpath = os.path.join(os.path.dirname(__file__), "../ci_data/simple.sedge")
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "simple.sedge")
     check_parse_result(
-        "@include file:///%s" % (fpath),
+        '@include "file:///%s"' % (fpath),
         "Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n",
     )
 
 
 def test_include_strips_root():
-    fpath = os.path.join(os.path.dirname(__file__), "../ci_data/strip_global.sedge")
+    fpath = os.path.join(
+        os.path.dirname(__file__), "..", "ci_data", "strip_global.sedge"
+    )
     check_parse_result(
-        "@include %s" % (fpath),
+        '@include "%s"' % (fpath),
         "Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n",
     )
 
 
 def test_include_args():
-    fpath = os.path.join(os.path.dirname(__file__), "../ci_data/args.sedge")
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "args.sedge")
     check_parse_result(
         """
 @set budgerigar percival
-@include %s <budgerigar>"""
+@include "%s" <budgerigar>"""
         % fpath,
         "Host = percival\n    HostName = beaking\n",
     )
@@ -352,7 +354,7 @@ def test_padded_expand_range():
 
 
 def test_http_disallowed():
-    with pytest.raises(FileNotFoundError) as _:
+    with pytest.raises((FileNotFoundError, OSError)) as _:
         config_for_text("@include http://example.com/thing.sedge")
 
 

@@ -45,9 +45,9 @@ class Section:
         for identity in self.identities:
             if config_access.get_keyfile(identity):
                 lines.append(("IdentitiesOnly", ["yes"]))
-                lines.append(
-                    ("IdentityFile", [pipes.quote(config_access.get_keyfile(identity))])
-                )
+                keyfile_path = config_access.get_keyfile(identity)
+                # pipes.quote() style shell escaping doens't work here, we are limited to double-quotes
+                lines.append(("IdentityFile", ['"' + config_access.get_keyfile(identity) + '"']))
         for section_name in self.types:
             section = config_access.get_section(section_name)
             lines += section.get_lines(config_access, visited_set)

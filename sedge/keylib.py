@@ -13,8 +13,9 @@ class FingerprintDoesNotParse(Exception):
 
 
 class KeyLibrary:
+    # \r ? match at the end is for Windows CRLF support
     fingerprint_re = re.compile(
-        r"^(?P<length>\d+) (?P<fingerprint>[^ ]+) (?P<comment>.*) (?P<algorithm>\(.*\)$)"
+        r"^(?P<length>\d+) (?P<fingerprint>[^ ]+) (?P<comment>.*) (?P<algorithm>\(.*\)\r?$)"
     )
 
     def __init__(self, path, verbose=False):
@@ -33,7 +34,7 @@ class KeyLibrary:
             file=sys.stderr,
         )
         print(
-            "attempting to generate; you may be prompted for a pass phrase.",
+            "attempting to generate; you may be prompted for a passphrase.",
             file=sys.stderr,
         )
         try:

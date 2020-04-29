@@ -170,10 +170,17 @@ def test_fingerprint_parser_double_space():
     )
 
 
-def test_fingerprint_parser_no_commentj():
+def test_fingerprint_parser_no_comment():
     check_fingerprint(
         "2048 SHA256:gUGtJb8Rh0tHHVwTg6chw7LIis7Vx7KBxCBjU1HYehk no comment (RSA)",
         "SHA256:gUGtJb8Rh0tHHVwTg6chw7LIis7Vx7KBxCBjU1HYehk",
+    )
+
+
+def test_fingerprint_parser_windows():
+    check_fingerprint(
+        "256 SHA256:aaaaaaaauooSjmHO/YZwHbc/jLIGPryiV7BTbbbbYIw david brent@DESKTOP-PC (ED25519)\r\n",
+        "SHA256:aaaaaaaauooSjmHO/YZwHbc/jLIGPryiV7BTbbbbYIw",
     )
 
 

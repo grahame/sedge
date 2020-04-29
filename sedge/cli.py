@@ -32,7 +32,7 @@ def ask_overwrite(file_name):
 
 def backup_file(file_name):
     _backup_file = get_file_backup_name(file_name)
-    os.rename(file_name, _backup_file)
+    os.replace(file_name, _backup_file)
     click.echo(
         "Your previous SSH configuration file has been renamed to: {}".format(
             _backup_file
@@ -191,7 +191,7 @@ def update(config):
         tmp_file.close()
         if config.verbose:
             diff_config_changes(config.output_file, tmp_file.name)
-        os.rename(tmp_file.name, config.output_file)
+        os.replace(tmp_file.name, config.output_file)
     except Exception:
         os.unlink(tmp_file.name)
         raise

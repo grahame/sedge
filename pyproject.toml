@@ -34,7 +34,7 @@ pytest = "^5.4.1"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py38
+envlist = py39
 isolated_build = True
 
 [testenv]

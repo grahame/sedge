@@ -4,10 +4,18 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "sedge"
-version = "2.1.2"
+version = "2.2.2"
 authors = ["Grahame Bowland <grahame@oreamnos.com.au>"]
 description = "Template and share OpenSSH ssh_config(5) files."
 readme = "README.md"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Intended Audience :: System Administrators",
+  "Topic :: System :: Networking",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX",
+]
 
 [tool.poetry.scripts]
 sedge = 'sedge.cli:cli'
@@ -21,11 +29,12 @@ requests = "^2.23.0"
 black = "^19.10b0"
 tox = "^3.14.6"
 flake8 = "^3.7.9"
+pytest = "^5.4.1"
 
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py38
+envlist = py39
 isolated_build = True
 
 [testenv]

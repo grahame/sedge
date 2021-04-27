@@ -2,13 +2,11 @@ import os
 import pytest
 from io import StringIO
 
-from sedge.engine import (
-    SedgeEngine,
-    Host,
-    ConfigOutput,
+from sedge.engine import SedgeEngine, Host, ConfigOutput
+from sedge.urlhandling import get_contents
+from sedge.exceptions import (
     ParserException,
     OutputException,
-    SecurityException,
 )
 
 from sedge.keylib import KeyLibrary
@@ -118,35 +116,37 @@ def test_include_https():
 
 
 def test_include_file():
-    fpath = os.path.join(os.path.dirname(__file__), '..', 'ci_data', 'simple.sedge')
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "simple.sedge")
     check_parse_result(
-        "@include %s" % (fpath),
+        '@include "%s"' % (fpath),
         "Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n",
     )
 
 
 def test_include_file_uri():
-    fpath = os.path.join(os.path.dirname(__file__), '..', 'ci_data', 'simple.sedge')
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "simple.sedge")
     check_parse_result(
-        "@include file:///%s" % (fpath),
+        '@include "file:///%s"' % (fpath),
         "Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n",
     )
 
 
 def test_include_strips_root():
-    fpath = os.path.join(os.path.dirname(__file__), '..', 'ci_data', 'strip_global.sedge')
+    fpath = os.path.join(
+        os.path.dirname(__file__), "..", "ci_data", "strip_global.sedge"
+    )
     check_parse_result(
-        "@include %s" % (fpath),
+        '@include "%s"' % (fpath),
         "Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n",
     )
 
 
 def test_include_args():
-    fpath = os.path.join(os.path.dirname(__file__), '..', 'ci_data', 'args.sedge')
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "args.sedge")
     check_parse_result(
         """
 @set budgerigar percival
-@include %s <budgerigar>"""
+@include "%s" <budgerigar>"""
         % fpath,
         "Host = percival\n    HostName = beaking\n",
     )
@@ -171,10 +171,17 @@ def test_fingerprint_parser_double_space():
     )
 
 
-def test_fingerprint_parser_no_commentj():
+def test_fingerprint_parser_no_comment():
     check_fingerprint(
         "2048 SHA256:gUGtJb8Rh0tHHVwTg6chw7LIis7Vx7KBxCBjU1HYehk no comment (RSA)",
         "SHA256:gUGtJb8Rh0tHHVwTg6chw7LIis7Vx7KBxCBjU1HYehk",
+    )
+
+
+def test_fingerprint_parser_windows():
+    check_fingerprint(
+        "256 SHA256:aaaaaaaauooSjmHO/YZwHbc/jLIGPryiV7BTbbbbYIw david brent@DESKTOP-PC (ED25519)\r\n",
+        "SHA256:aaaaaaaauooSjmHO/YZwHbc/jLIGPryiV7BTbbbbYIw",
     )
 
 
@@ -299,42 +306,42 @@ def test_to_line_two_args_spaces():
 
 
 def test_to_line_two_args_spaces_quotes():
-    with pytest.raises(OutputException) as e_info:
+    with pytest.raises(OutputException) as _:
         ConfigOutput.to_line("Test", ['This has a quote"', "Eep"])
 
 
 def test_root_is_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         config_for_text("@is a-thing")
 
 
 def test_invalid_range_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{1}"])
 
 
 def test_invalid_range_dup_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{1..2..4}"])
 
 
 def test_invalid_padded_range_dup_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{001..002..004}"])
 
 
 def test_invalid_range_nonint_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{1..cat}"])
 
 
 def test_invalid_padded_range_nonint_fails():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{001..cat}"])
 
 
 def test_invalid_range_empty():
-    with pytest.raises(ParserException) as e_info:
+    with pytest.raises(ParserException) as _:
         Host.expand_with(["{}"])
 
 
@@ -355,8 +362,8 @@ def test_padded_expand_range():
 
 
 def test_http_disallowed():
-    with pytest.raises(SecurityException) as e_info:
-        config_for_text("@include http://example.com/thing.sedge")
+    with pytest.raises((FileNotFoundError, OSError)) as _:
+        get_contents("http://example.com/thing.sedge", True)
 
 
 def test_subst():

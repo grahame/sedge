@@ -3,13 +3,12 @@ import pipes
 import sys
 from io import StringIO
 from itertools import product
-from pathlib import Path
 
-from .keylib import KeyNotFound
 from .exceptions import (
     ParserException,
     OutputException,
 )
+from .keylib import KeyNotFound
 from .urlhandling import get_contents
 
 

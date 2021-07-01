@@ -99,10 +99,14 @@ sedge_config = click.make_pass_decorator(SedgeConfig, ensure=True)
 @click.group()
 @click.version_option()
 @click.option(
-    "-c", "--config-file", default=os.path.expanduser("~/.sedge/config"),
+    "-c",
+    "--config-file",
+    default=os.path.expanduser("~/.sedge/config"),
 )
 @click.option(
-    "-o", "--output-file", default=os.path.expanduser("~/.ssh/config"),
+    "-o",
+    "--output-file",
+    default=os.path.expanduser("~/.ssh/config"),
 )
 @click.option("-n", "--no-verify", is_flag=True, help="do not verify HTTPS requests")
 @click.option(

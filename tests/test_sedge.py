@@ -152,6 +152,37 @@ def test_include_args():
     )
 
 
+def test_include_args_not_set():
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "args.sedge")
+    with pytest.raises(
+        ParserException,
+        match="expected a value for variable '<budgerigar>', set it using @set or @args",
+    ) as _:
+        config_for_text(
+            """
+    @set budgerigar2 percival
+    @include "%s" <budgerigar> <budgerigar2>"""
+            % fpath
+        )
+
+
+def test_include_args_not_included():
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "args.sedge")
+    with open(fpath, "rt") as f, pytest.raises(
+        ParserException,
+        match="expected a value for variable '<budgie>', set it using @set or @args",
+    ) as _:
+        check_parse_result(f.read(), "Host = <budgie>\n    HostName = beaking\n")
+
+
+def test_include_args_not_set_not_passed():
+    fpath = os.path.join(os.path.dirname(__file__), "..", "ci_data", "args.sedge")
+    with pytest.raises(
+        ParserException, match="required arguments not passed to include"
+    ) as _:
+        config_for_text('@include "%s"' % fpath)
+
+
 def check_fingerprint(data, fingerprint):
     determined = KeyLibrary._fingerprint_from_keyinfo(data)
     assert determined == fingerprint

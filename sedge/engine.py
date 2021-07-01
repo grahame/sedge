@@ -141,10 +141,22 @@ class Host(Section):
             lines.append(ConfigOutput.to_line(keyword, parts, indent=4))
         return lines
 
-    def apply_substitutions(self, lines, val_dict):
+    def apply_substitutions(self, lines, val_dict, expect_val=False):
         for line in lines:
+            original_line = line
             for subst, value in val_dict.items():
                 line = line.replace(subst, value)
+            if (
+                original_line
+                and expect_val
+                and line == original_line
+                and line.startswith("<")
+                and line.endswith(">")
+            ):
+                raise ParserException(
+                    "expected a value for variable '%s', set it using @set or @args"
+                    % original_line
+                )
             yield line
 
     def variable_iter(self, base):
@@ -169,7 +181,9 @@ class Host(Section):
         """
         defn_lines = self.resolve_defn(config_access)
         for val_dict in self.variable_iter(config_access.get_variables()):
-            subst = list(self.apply_substitutions(defn_lines, val_dict))
+            subst = list(
+                self.apply_substitutions(defn_lines, val_dict, expect_val=True)
+            )
             host = subst[0]
             lines = [ConfigOutput.to_line("Host", [host])] + subst[1:]
             yield host, lines
@@ -333,7 +347,7 @@ class SedgeEngine:
     def parse(self, fd):
         """very simple parser - but why would we want it to be complex?"""
 
-        def resolve_args(args):
+        def resolve_args(args, expect_val=False):
             # FIXME break this out, it's in common with the templating stuff elsewhere
             root = self.sections[0]
             val_dict = dict(
@@ -341,8 +355,20 @@ class SedgeEngine:
             )
             resolved_args = []
             for arg in args:
+                original_arg = arg
                 for subst, value in val_dict.items():
                     arg = arg.replace(subst, value)
+                if (
+                    original_arg
+                    and expect_val
+                    and arg == original_arg
+                    and arg.startswith("<")
+                    and arg.endswith(">")
+                ):
+                    raise ParserException(
+                        "expected a value for variable '%s', set it using @set or @args"
+                        % original_arg
+                    )
                 resolved_args.append(arg)
             return resolved_args
 
@@ -423,7 +449,7 @@ class SedgeEngine:
                 StringIO(contents),
                 self._verify_ssl,
                 url=url,
-                args=resolve_args(subargs),
+                args=resolve_args(subargs, expect_val=True),
                 parent_keydefs=self.keydefs,
                 via_include=True,
             )

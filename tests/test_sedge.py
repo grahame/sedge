@@ -144,7 +144,7 @@ def test_include_strips_root(capsys):
     captured = capsys.readouterr()
     assert captured.err == "\n".join(
         [
-            r"Warning: global config in @include 'C:\Work\DevOpsLocal\sedge\tests\..\ci_data\strip_global.sedge' ignored.",
+            fr"Warning: global config in @include '{fpath}' ignored.",
             "Ignored lines are:",
             " > DoesThisGetStripped = hopefully",
             "",

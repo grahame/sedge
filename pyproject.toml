@@ -21,15 +21,16 @@ classifiers = [
 sedge = 'sedge.cli:cli'
 
 [tool.poetry.dependencies]
-python = ">=3.7"
-click = "^7.1.1"
+python = ">=3.7,<4"
+click = "^8.0.1"
 requests = "^2.23.0"
+urllib3 = "^1.26.6"
 
 [tool.poetry.dev-dependencies]
-black = "^19.10b0"
+black = "^21.8b0"
 tox = "^3.14.6"
 flake8 = "^3.7.9"
-pytest = "^5.4.1"
+pytest = "^6.2.5"
 
 [tool.tox]
 legacy_tox_ini = """
@@ -60,3 +61,16 @@ exclude = '''
   | tests/.*/setup.py
 )/
 '''
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+  "tests"
+]
+
+[tool.coverage.run]
+omit = [
+  '*/site-packages/*',
+  '*/tests/*'
+]

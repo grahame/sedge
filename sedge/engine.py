@@ -45,7 +45,7 @@ class Section:
         for identity in self.identities:
             if config_access.get_keyfile(identity):
                 lines.append(("IdentitiesOnly", ["yes"]))
-                keyfile_path = config_access.get_keyfile(identity)
+                config_access.get_keyfile(identity)
                 # pipes.quote() style shell escaping doens't work here, we are limited to double-quotes
                 lines.append(
                     ("IdentityFile", ['"' + config_access.get_keyfile(identity) + '"'])

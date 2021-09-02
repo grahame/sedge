@@ -1,4 +1,6 @@
 import os
+import re
+
 import pytest
 from io import StringIO
 
@@ -131,13 +133,22 @@ def test_include_file_uri():
     )
 
 
-def test_include_strips_root():
+def test_include_strips_root(capsys):
     fpath = os.path.join(
         os.path.dirname(__file__), "..", "ci_data", "strip_global.sedge"
     )
     check_parse_result(
         '@include "%s"' % (fpath),
         "Host = percival\n    HostName = beaking\n    ForwardAgent = yes\n    ForwardX11 = yes\n",
+    )
+    captured = capsys.readouterr()
+    assert captured.err == "\n".join(
+        [
+            r"Warning: global config in @include 'C:\Work\DevOpsLocal\sedge\tests\..\ci_data\strip_global.sedge' ignored.",
+            "Ignored lines are:",
+            " > DoesThisGetStripped = hopefully",
+            "",
+        ]
     )
 
 
@@ -287,6 +298,18 @@ def test_parser_quotearg_noquotearg_quotearg():
     )
 
 
+def test_parser_quotearg_invalid_quote():
+    with pytest.raises(ParserException, match="unterminated quotation marks") as _:
+        check_config_parser('Keyword "Arg1 NotArg2 Arg2', ("fails"))
+
+
+def test_parser_quotearg_too_many_quotes():
+    with pytest.raises(
+        ParserException, match="quotation marks cannot be used within an argument value"
+    ) as _:
+        check_config_parser('Keyword "Arg1 Not"Arg2" Arg2', ("fails"))
+
+
 def test_parser_equals_nospc():
     check_config_parser("Keyword=Value", ("Keyword", ["Value"]))
 
@@ -392,6 +415,10 @@ def test_padded_expand_range():
     assert ["001", "003"] == Host.expand_with(["{001..003/2}"])
 
 
+def test_padded_expand_range_diff_width():
+    assert ["1", "3"] == Host.expand_with(["{01..003/2}"])
+
+
 def test_http_disallowed():
     with pytest.raises((FileNotFoundError, OSError)) as _:
         get_contents("http://example.com/thing.sedge", True)
@@ -408,4 +435,62 @@ def test_subst_with_via():
     check_parse_result(
         "@set goat cheese\n\nHost test\n@via <goat>",
         "Host = test\n    ProxyJump = cheese\n",
+    )
+
+
+def test_duplicate_host(capsys):
+    check_parse_result(
+        "Host duplicated\nHostName duplicate1\nHost duplicated\nHostName duplicate2",
+        "Host = duplicated\n    HostName = duplicate1\n\nHost = duplicated\n    HostName = duplicate2\n",
+    )
+    captured = capsys.readouterr()
+    assert captured.err == "Warning: duplicated hosts parsing 'None'\n  duplicated\n"
+
+
+def test_unknown_keyword():
+    with pytest.raises(ParserException, match="unknown expansion keyword @blah") as _:
+        check_parse_result("@blah hello", "fails")
+
+
+def test_duplicate_section():
+    with pytest.raises(
+        ParserException, match="More than one section with name 'trusted'"
+    ) as _:
+        check_parse_result(
+            "@HostAttrs trusted\n    ForwardAgent yes \n@HostAttrs trusted\n    ForwardAgent yes\n Host cheese\n @is trusted",
+            "fails",
+        )
+
+
+def test_missing_section():
+    with pytest.raises(ParserException, match="No such section: trusted") as _:
+        check_parse_result("Host cheese\n @is trusted", "fails")
+
+
+def test_invalid_key_def():
+    with pytest.raises(
+        ParserException, match=re.escape("usage: @key <name> [fingerprint]...")
+    ) as _:
+        check_parse_result("@key blah", "fails")
+
+
+def test_missing_key_def(capsys):
+    check_parse_result("Host mycheese\n@identity blah", "Host = mycheese\n")
+    captured = capsys.readouterr()
+    assert (
+        captured.err
+        == "None: identity 'blah' is not defined (missing @key definition)\n"
+    )
+
+
+def test_key_def(capsys):
+    check_parse_result(
+        "@key mykey 00:0a:0b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06\n Host goatcheese\n @identity mykey",
+        "Host = goatcheese\n",
+    )
+    captured = capsys.readouterr()
+    assert (
+        captured.err
+        == "None: identity 'mykey' (fingerprints 00:0a:0b:0c:0d:0e:0f:f0:0d:01:02:02:03:04:05:06) "
+        "not found in SSH key library\n"
     )

@@ -4,7 +4,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "sedge"
-version = "2.2.5"
+version = "2.2.6"
 authors = ["Grahame Bowland <grahame@oreamnos.com.au>"]
 description = "Template and share OpenSSH ssh_config(5) files."
 readme = "README.md"
@@ -30,6 +30,9 @@ click = "*"
 requests = "*"
 tox = "*"
 pytest = "*"
+
+[tool.poetry.group.dev.dependencies]
+poetryup = "^0.12.7"
 
 [tool.tox]
 legacy_tox_ini = """

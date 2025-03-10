@@ -1,5 +1,5 @@
 import os
-import pipes
+import shlex
 import sys
 from io import StringIO
 from itertools import product
@@ -46,7 +46,7 @@ class Section:
             if config_access.get_keyfile(identity):
                 lines.append(("IdentitiesOnly", ["yes"]))
                 keyfile_path = config_access.get_keyfile(identity)
-                # pipes.quote() style shell escaping doens't work here, we are limited to double-quotes
+                # shlex.quote() style shell escaping doens't work here, we are limited to double-quotes
                 lines.append(
                     ("IdentityFile", ['"' + config_access.get_keyfile(identity) + '"'])
                 )
@@ -423,7 +423,7 @@ class SedgeEngine:
                 raise ParserException("usage: @via <Hostname>")
             section.add_line(
                 "ProxyJump",
-                ("{args}".format(args=pipes.quote(resolve_args(parts)[0])),),
+                ("{args}".format(args=shlex.quote(resolve_args(parts)[0])),),
             )
 
         def handle_identity(section, parts):

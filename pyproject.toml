@@ -1,38 +1,40 @@
-[build-system]
-requires = ["poetry"]
-build-backend = "poetry.masonry.api"
-
-[tool.poetry]
+[project]
 name = "sedge"
-version = "2.3.0"
-authors = ["Grahame Bowland <grahame@oreamnos.com.au>"]
+version = "2.3.1"
 description = "Template and share OpenSSH ssh_config(5) files."
+authors = [{ name = "Grahame Bowland", email = "grahame@oreamnos.com.au" }]
+requires-python = ">=3.7,<4"
 readme = "README.md"
 classifiers = [
-  "Development Status :: 5 - Production/Stable",
-  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-  "Intended Audience :: System Administrators",
-  "Topic :: System :: Networking",
-  "Operating System :: Microsoft :: Windows",
-  "Operating System :: POSIX",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Intended Audience :: System Administrators",
+    "Topic :: System :: Networking",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+]
+dependencies = [
+    "click",
+    "requests",
 ]
 
-[tool.poetry.scripts]
-sedge = 'sedge.cli:cli'
+[project.scripts]
+sedge = "sedge.cli:cli"
 
-[tool.poetry.dependencies]
-python = ">=3.7,<4"
-click = "*"
-requests = "*"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry.dev-dependencies]
-click = "*"
-requests = "*"
-tox = "*"
-pytest = "*"
+[tool.hatch.build.targets.wheel]
+packages = ["sedge"]
 
-[tool.poetry.group.dev.dependencies]
-poetryup = "^0.12.7"
+[dependency-groups]
+dev = [
+    "click",
+    "requests",
+    "tox",
+    "pytest",
+]
 
 [tool.tox]
 legacy_tox_ini = """
